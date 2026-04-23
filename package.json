@@ -33,7 +33,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
     "embla-carousel-react": "^8.6.0",
+    "express": "^5.2.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.487.0",
     "next-themes": "^0.4.6",
@@ -55,7 +58,10 @@
     "tailwindcss": "4.1.12"
   },
   "scripts": {
-    "dev": "parcel index.html --port 3000",
-    "build": "parcel build index.html"
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "parcel index.html --port 3000",
+    "dev:server": "node server/index.js",
+    "build": "parcel build index.html",
+    "start": "node server/index.js"
   }
 }

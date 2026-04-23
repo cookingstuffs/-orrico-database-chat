@@ -7,6 +7,7 @@ import { DashboardPage } from "./components/DashboardPage";
 import { DatabaseConnectionPage } from "./components/DatabaseConnectionPage";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./components/ThemeProvider";
+import { api } from "./lib/api";
 
 type Page =
   | "landing"
@@ -24,15 +25,24 @@ export default function App() {
   // Check for existing authentication on startup
   useEffect(() => {
     const authToken = localStorage.getItem("orrico_auth_token");
-    const currentUser = localStorage.getItem(
-      "orrico_current_user",
-    );
 
-    if (authToken && currentUser) {
-      setIsLoggedIn(true);
-      // Keep user on landing page even if logged in
-      // They can navigate to chat/dashboard from the header
+    if (!authToken) {
+      return;
     }
+
+    api
+      .session()
+      .then((session) => {
+        localStorage.setItem(
+          "orrico_current_user",
+          JSON.stringify(session.user),
+        );
+        setIsLoggedIn(true);
+      })
+      .catch(() => {
+        localStorage.removeItem("orrico_auth_token");
+        localStorage.removeItem("orrico_current_user");
+      });
   }, []);
 
   const handleLogin = () => {
@@ -43,6 +53,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    api.logout().catch(() => undefined);
     // Clear authentication data
     localStorage.removeItem("orrico_auth_token");
     localStorage.removeItem("orrico_current_user");

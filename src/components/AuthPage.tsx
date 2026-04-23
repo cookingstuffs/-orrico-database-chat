@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import shopkeeperImage from "../assets/2609b7d59d0b4c5c57d1b7fab24a98ad05088a2f.png";
+import { api } from "../lib/api";
 
 declare global {
   interface Window {
@@ -106,6 +107,14 @@ export function AuthPage({
   const signupForm = useForm<SignupForm>();
   const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
 
+  const persistSession = (token: string, user: unknown) => {
+    localStorage.setItem("orrico_auth_token", token);
+    localStorage.setItem(
+      "orrico_current_user",
+      JSON.stringify(user),
+    );
+  };
+
   const decodeGoogleCredential = (
     credential: string,
   ): GoogleUserProfile => {
@@ -125,7 +134,7 @@ export function AuthPage({
     return JSON.parse(jsonPayload);
   };
 
-  const handleGoogleCredential = (
+  const handleGoogleCredential = async (
     response: GoogleCredentialResponse,
   ) => {
     if (!response.credential) {
@@ -170,14 +179,15 @@ export function AuthPage({
         );
       }
 
-      localStorage.setItem(
-        "orrico_current_user",
-        JSON.stringify(googleUser),
-      );
-      localStorage.setItem(
-        "orrico_auth_token",
-        `google_authenticated_${Date.now()}`,
-      );
+      const session = await api.googleLogin({
+        googleId: profile.sub,
+        email: profile.email,
+        firstName: googleUser.firstName,
+        lastName: googleUser.lastName,
+        avatarUrl: profile.picture,
+      });
+
+      persistSession(session.token, session.user);
 
       toast.success(
         "Signed in with Google. Redirecting to your dashboard...",
@@ -249,82 +259,32 @@ export function AuthPage({
     setIsLoading(true);
 
     try {
-      // Check for demo account first
-      if (
-        data.email === "demo@orrico.com" &&
-        data.password === "demo123"
-      ) {
-        const demoUser = {
-          id: "demo_user",
-          firstName: "Demo",
-          lastName: "User",
-          email: "demo@orrico.com",
-          businessName: "Demo Retail Store",
-          password: "demo123",
-          createdAt: new Date().toISOString(),
-        };
+      const session = await api.login({
+        email: data.email,
+        password: data.password,
+      });
 
-        localStorage.setItem(
-          "orrico_current_user",
-          JSON.stringify(demoUser),
-        );
-        localStorage.setItem(
-          "orrico_auth_token",
-          "authenticated_" + Date.now(),
-        );
-        setIsLoading(false);
-        toast.success(
-          "Welcome back! Redirecting to your dashboard...",
-        );
-        setTimeout(() => {
-          onLogin?.();
-        }, 1000);
-        return;
-      }
-
-      // Check if user exists in localStorage
-      const existingUsers = JSON.parse(
-        localStorage.getItem("orrico_users") || "[]",
+      persistSession(session.token, session.user);
+      setIsLoading(false);
+      toast.success(
+        "Welcome back! Redirecting to your dashboard...",
       );
-      const user = existingUsers.find(
-        (u: any) =>
-          u.email === data.email &&
-          u.password === data.password,
-      );
-
-      if (user) {
-        // Login successful
-        localStorage.setItem(
-          "orrico_current_user",
-          JSON.stringify(user),
-        );
-        localStorage.setItem(
-          "orrico_auth_token",
-          "authenticated_" + Date.now(),
-        );
-        setIsLoading(false);
-        toast.success(
-          "Welcome back! Redirecting to your dashboard...",
-        );
-        setTimeout(() => {
-          onLogin?.();
-        }, 1000);
-      } else {
-        // Login failed
-        setIsLoading(false);
-        toast.error(
-          "Invalid email or password. Please try again.",
-        );
-        loginForm.setError("email", {
-          message: "Invalid credentials",
-        });
-        loginForm.setError("password", {
-          message: "Invalid credentials",
-        });
-      }
+      setTimeout(() => {
+        onLogin?.();
+      }, 1000);
     } catch (error) {
       setIsLoading(false);
-      toast.error("Login failed. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Login failed. Please try again.",
+      );
+      loginForm.setError("email", {
+        message: "Invalid credentials",
+      });
+      loginForm.setError("password", {
+        message: "Invalid credentials",
+      });
     }
   };
 
@@ -346,50 +306,15 @@ export function AuthPage({
     setIsLoading(true);
 
     try {
-      // Check if user already exists
-      const existingUsers = JSON.parse(
-        localStorage.getItem("orrico_users") || "[]",
-      );
-      const userExists = existingUsers.find(
-        (u: any) => u.email === data.email,
-      );
-
-      if (userExists) {
-        setIsLoading(false);
-        toast.error(
-          "An account with this email already exists. Please sign in instead.",
-        );
-        signupForm.setError("email", {
-          message: "Email already registered",
-        });
-        return;
-      }
-
-      // Create new user
-      const newUser = {
-        id: Date.now().toString(),
+      const session = await api.signup({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         businessName: data.businessName,
         password: data.password,
-        createdAt: new Date().toISOString(),
-      };
+      });
 
-      // Save to localStorage
-      existingUsers.push(newUser);
-      localStorage.setItem(
-        "orrico_users",
-        JSON.stringify(existingUsers),
-      );
-      localStorage.setItem(
-        "orrico_current_user",
-        JSON.stringify(newUser),
-      );
-      localStorage.setItem(
-        "orrico_auth_token",
-        "authenticated_" + Date.now(),
-      );
+      persistSession(session.token, session.user);
 
       setIsLoading(false);
       toast.success(
@@ -400,7 +325,11 @@ export function AuthPage({
       }, 1000);
     } catch (error) {
       setIsLoading(false);
-      toast.error("Account creation failed. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Account creation failed. Please try again.",
+      );
     }
   };
 

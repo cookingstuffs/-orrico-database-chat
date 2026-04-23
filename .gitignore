@@ -16,3 +16,4 @@ gh-windows-amd64.zip
 !.env.example
 
 .vercel
+server/data/*.json

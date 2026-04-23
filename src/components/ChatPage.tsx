@@ -15,6 +15,7 @@ import {
   CHAT_INTENTS,
   type IntentDefinition,
 } from "../data/chatIntents";
+import { api } from "../lib/api";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "./ThemeToggle";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -686,7 +687,7 @@ export function ChatPage({
     };
   }, []);
 
-  const performSendMessage = (message: string) => {
+  const performSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
     const userMessage: Message = {
@@ -701,17 +702,24 @@ export function ChatPage({
     setInterimTranscript("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(message);
+    try {
+      const result = await api.sendChatMessage(message);
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "ai",
-        content: aiResponse,
+        content: result.reply,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Chat response could not be loaded.",
+      );
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleSendMessage = (message: string) => {

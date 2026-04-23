@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   Card,
@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { Database, Check, ArrowRight, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "./Logo";
+import { api } from "../lib/api";
 
 interface DatabaseForm {
   databaseType: string;
@@ -106,6 +107,10 @@ export function DatabaseConnectionPage({
   const [selectedDatabase, setSelectedDatabase] = useState<string>("mysql");
   const [isLoading, setIsLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+  const [existingConnection, setExistingConnection] = useState<any>(null);
+  const currentUser = JSON.parse(
+    localStorage.getItem("orrico_current_user") || "{}",
+  );
 
   const form = useForm<DatabaseForm>({
     defaultValues: {
@@ -117,6 +122,20 @@ export function DatabaseConnectionPage({
       password: "",
     },
   });
+
+  useEffect(() => {
+    api
+      .currentDatabaseConnection()
+      .then((result) => {
+        setExistingConnection(result.connection);
+        if (result.connection?.databaseType) {
+          setSelectedDatabase(result.connection.databaseType);
+        }
+      })
+      .catch(() => {
+        setExistingConnection(null);
+      });
+  }, []);
 
   const handleDatabaseChange = (value: string) => {
     setSelectedDatabase(value);
@@ -167,20 +186,14 @@ export function DatabaseConnectionPage({
     setIsLoading(true);
 
     try {
-      // Simulate connection delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Store database connection details (in a real app, this would be encrypted)
       const connectionConfig = {
         ...data,
         connectedAt: new Date().toISOString(),
         isDemoConnection: isDemoConnection(data),
       };
 
-      localStorage.setItem(
-        "orrico_db_connection",
-        JSON.stringify(connectionConfig)
-      );
+      const result = await api.saveDatabaseConnection(connectionConfig);
+      setExistingConnection(result.connection);
 
       setIsLoading(false);
       toast.success("Database connected successfully! Redirecting to dashboard...");
@@ -209,22 +222,9 @@ export function DatabaseConnectionPage({
   };
 
   const skipConnection = () => {
-    // Store that user skipped database connection
-    localStorage.setItem(
-      "orrico_db_connection",
-      JSON.stringify({ skipped: true, skippedAt: new Date().toISOString() })
-    );
     toast.info("You can configure database connection later from settings.");
     onComplete();
   };
-
-  const currentUser = JSON.parse(
-    localStorage.getItem("orrico_current_user") || "{}"
-  );
-
-  const existingConnection = JSON.parse(
-    localStorage.getItem("orrico_db_connection") || "null"
-  );
 
   const hasExistingConnection = existingConnection && !existingConnection.skipped;
 
