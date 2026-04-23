@@ -14,7 +14,6 @@ Create a Google OAuth Web Client ID and add it as:
 
 ```env
 GOOGLE_CLIENT_ID=your-google-oauth-web-client-id.apps.googleusercontent.com
-VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id.apps.googleusercontent.com
 ```
 
 Use `http://localhost:3000` and the production Vercel URL as authorized
