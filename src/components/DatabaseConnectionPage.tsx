@@ -35,6 +35,7 @@ const databaseOptions = [
   {
     id: "mysql",
     name: "MySQL",
+    badge: "MY",
     icon: "🐬",
     defaultPort: "3306",
     description: "Popular open-source relational database",
@@ -42,6 +43,7 @@ const databaseOptions = [
   {
     id: "postgresql",
     name: "PostgreSQL",
+    badge: "PG",
     icon: "🐘",
     defaultPort: "5432",
     description: "Advanced open-source database system",
@@ -49,6 +51,7 @@ const databaseOptions = [
   {
     id: "oracle",
     name: "Oracle",
+    badge: "OR",
     icon: "🔴",
     defaultPort: "1521",
     description: "Enterprise-grade database solution",
@@ -56,6 +59,7 @@ const databaseOptions = [
   {
     id: "sqlite",
     name: "SQLite",
+    badge: "SQ",
     icon: "🪶",
     defaultPort: "",
     description: "Lightweight file-based database",
@@ -321,7 +325,9 @@ export function DatabaseConnectionPage({
                           className="flex flex-col items-start gap-3 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary cursor-pointer transition-all"
                         >
                           <div className="flex items-center gap-3 w-full">
-                            <span className="text-2xl">{db.icon}</span>
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-md border bg-muted text-sm font-semibold tracking-wide">
+                              {db.badge}
+                            </span>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span>{db.name}</span>
