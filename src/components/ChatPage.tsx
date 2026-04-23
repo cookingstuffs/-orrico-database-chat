@@ -516,6 +516,10 @@ export function ChatPage({
   const [interimTranscript, setInterimTranscript] = useState("");
   const [hasSpeechSupport, setHasSpeechSupport] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const inputValueRef = useRef("");
+  const interimTranscriptRef = useRef("");
+  const shouldSendAfterRecordingRef = useRef(false);
+  const manualStopRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const memoryRef = useRef<ConversationMemory>({
@@ -553,6 +557,10 @@ export function ChatPage({
     "Compare this month to last month",
     "What's my profit margin?",
   ];
+  const displayedInputValue = [inputValue, interimTranscript]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
   const scrollToBottom = () => {
     const viewport = scrollAreaRef.current?.querySelector(
@@ -572,6 +580,14 @@ export function ChatPage({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    inputValueRef.current = inputValue;
+  }, [inputValue]);
+
+  useEffect(() => {
+    interimTranscriptRef.current = interimTranscript;
+  }, [interimTranscript]);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -618,6 +634,14 @@ export function ChatPage({
       setIsRecording(false);
       setInterimTranscript("");
 
+      if (
+        manualStopRef.current &&
+        (event.error === "aborted" || event.error === "no-speech")
+      ) {
+        manualStopRef.current = false;
+        return;
+      }
+
       if (event.error === "not-allowed") {
         toast.error("Microphone permission was blocked.");
         return;
@@ -634,6 +658,24 @@ export function ChatPage({
     recognition.onend = () => {
       setIsRecording(false);
       setInterimTranscript("");
+      const shouldSendAfterRecording =
+        shouldSendAfterRecordingRef.current;
+      manualStopRef.current = false;
+      shouldSendAfterRecordingRef.current = false;
+
+      if (shouldSendAfterRecording) {
+        const messageToSend = [
+          inputValueRef.current.trim(),
+          interimTranscriptRef.current.trim(),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+
+        if (messageToSend) {
+          performSendMessage(messageToSend);
+        }
+      }
     };
 
     recognitionRef.current = recognition;
@@ -645,7 +687,7 @@ export function ChatPage({
     };
   }, []);
 
-  const handleSendMessage = async (message: string) => {
+  const performSendMessage = (message: string) => {
     if (!message.trim()) return;
 
     const userMessage: Message = {
@@ -671,6 +713,23 @@ export function ChatPage({
       setMessages((prev) => [...prev, aiMessage]);
       setIsTyping(false);
     }, 1500);
+  };
+
+  const handleSendMessage = (message: string) => {
+    const messageToSend = message.trim();
+
+    if (!messageToSend) {
+      return;
+    }
+
+    if (isRecording && recognitionRef.current) {
+      shouldSendAfterRecordingRef.current = true;
+      manualStopRef.current = true;
+      recognitionRef.current.stop();
+      return;
+    }
+
+    performSendMessage(messageToSend);
   };
 
   const normalizedIntentPatterns = useMemo(
@@ -806,9 +865,9 @@ export function ChatPage({
     }
 
     if (isRecording) {
+      shouldSendAfterRecordingRef.current = false;
+      manualStopRef.current = true;
       recognitionRef.current.stop();
-      setIsRecording(false);
-      setInterimTranscript("");
       toast.info("Voice recording stopped.");
       return;
     }
@@ -879,7 +938,14 @@ export function ChatPage({
                 variant="ghost"
                 size="sm"
                 className="h-auto w-full justify-start p-2 text-left"
-                onClick={() => handleSendMessage(question)}
+                onClick={() => {
+                  if (isRecording && recognitionRef.current) {
+                    shouldSendAfterRecordingRef.current = false;
+                    manualStopRef.current = true;
+                    recognitionRef.current.stop();
+                  }
+                  handleSendMessage(question);
+                }}
               >
                 <span className="text-xs">{question}</span>
               </Button>
@@ -1023,9 +1089,7 @@ export function ChatPage({
             <div className="flex gap-4">
               <div className="relative flex-1">
                 <Input
-                  value={isRecording && interimTranscript
-                    ? `${inputValue}${inputValue && interimTranscript ? " " : ""}${interimTranscript}`
-                    : inputValue}
+                  value={displayedInputValue}
                   onChange={(event) => {
                     setInputValue(event.target.value);
                     setInterimTranscript("");
@@ -1037,7 +1101,7 @@ export function ChatPage({
                   }
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      handleSendMessage(inputValue);
+                      handleSendMessage(displayedInputValue);
                     }
                   }}
                   className="pr-12"
@@ -1062,8 +1126,8 @@ export function ChatPage({
                 </Button>
               </div>
               <Button
-                onClick={() => handleSendMessage(inputValue)}
-                disabled={!inputValue.trim()}
+                onClick={() => handleSendMessage(displayedInputValue)}
+                disabled={!displayedInputValue.trim()}
               >
                 <Send className="h-4 w-4" />
               </Button>
