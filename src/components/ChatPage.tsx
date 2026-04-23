@@ -1055,9 +1055,9 @@ export function ChatPage({
                   }
                 >
                   {isRecording ? (
-                    <MicOff className="h-4 w-4" />
-                  ) : (
                     <Mic className="h-4 w-4" />
+                  ) : (
+                    <MicOff className="h-4 w-4" />
                   )}
                 </Button>
               </div>

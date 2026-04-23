@@ -148,9 +148,9 @@ export function ChatDemo() {
                     className={isListening ? "animate-pulse" : ""}
                   >
                     {isListening ? (
-                      <MicOff className="w-4 h-4" />
-                    ) : (
                       <Mic className="w-4 h-4" />
+                    ) : (
+                      <MicOff className="w-4 h-4" />
                     )}
                   </Button>
                   <div className="flex-1 flex items-center px-4 py-2 bg-muted rounded-lg">
