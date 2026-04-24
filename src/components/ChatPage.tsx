@@ -897,8 +897,8 @@ export function ChatPage({
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="flex w-80 flex-col border-r bg-muted/20">
+    <div className="flex h-screen overflow-hidden bg-background">
+      <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r bg-muted/20">
         <div className="border-b p-6">
           <Logo
             iconClassName="h-6 w-6"
@@ -939,7 +939,7 @@ export function ChatPage({
           </div>
         </div>
 
-        <div className="flex-1 p-6">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <h3 className="mb-3 font-medium">Quick Questions</h3>
           <div className="space-y-2">
             {quickQuestions.map((question, index) => (
@@ -1003,8 +1003,8 @@ export function ChatPage({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col">
-        <div className="border-b bg-background p-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 border-b bg-background p-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold">{ASSISTANT_FULL_NAME}</h1>
@@ -1030,7 +1030,7 @@ export function ChatPage({
           </div>
         </div>
 
-        <ScrollArea ref={scrollAreaRef} className="flex-1 p-6">
+        <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1 p-6">
           <div className="mx-auto max-w-4xl space-y-6">
             {messages.map((message) => (
               <div
@@ -1091,7 +1091,7 @@ export function ChatPage({
           </div>
         </ScrollArea>
 
-        <div className="border-t bg-background p-6">
+        <div className="shrink-0 border-t bg-background p-6">
           <div className="mx-auto max-w-4xl">
             <div className="flex gap-4">
               <div className="relative flex-1">

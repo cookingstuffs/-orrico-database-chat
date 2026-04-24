@@ -882,7 +882,7 @@ export function DashboardPage({
       : `${selectedProducts.length} items`;
 
     toast.success("New POS Sale", {
-      description: `${selectedCustomer.name} • ${productSummary} • ₹${total.toLocaleString()}`,
+      description: `${selectedCustomer.name} | ${productSummary} | Rs ${total.toLocaleString()}`,
     });
   };
 
@@ -1108,8 +1108,8 @@ export function DashboardPage({
     setShowNewOrderDialog(false);
     
     const successMessage = newOrder.isNewCustomer 
-      ? `New customer "${customer.name}" added and order created! ${quantity}x ${product.name} for ₹${total.toLocaleString()}`
-      : `Order created! ${customer.name} purchased ${quantity}x ${product.name} for ₹${total.toLocaleString()}`;
+      ? `New customer "${customer.name}" added and order created! ${quantity}x ${product.name} for Rs ${total.toLocaleString()}`
+      : `Order created! ${customer.name} purchased ${quantity}x ${product.name} for Rs ${total.toLocaleString()}`;
     
     toast.success(successMessage);
   };
@@ -1129,7 +1129,7 @@ export function DashboardPage({
   const metrics = [
     {
       title: "Today's Revenue",
-      value: `₹${todayRevenue.toLocaleString()}`,
+      value: `Rs ${todayRevenue.toLocaleString()}`,
       change: "+12.5%",
       positive: true,
       icon: <IndianRupee className="h-4 w-4" />,
@@ -1166,9 +1166,9 @@ export function DashboardPage({
   const recentCustomers = [...customers].slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <div className="w-80 border-r bg-muted/20 flex flex-col">
+      <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r bg-muted/20">
         {/* Header */}
         <div className="p-6 border-b">
           <Logo iconClassName="h-6 w-6" className="mb-4" onClick={onNavigateToLanding} clickable={!!onNavigateToLanding} />
@@ -1232,7 +1232,7 @@ export function DashboardPage({
         </div>
 
         {/* Navigation */}
-        <div className="p-6 flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <h3 className="font-medium mb-3">Navigation</h3>
           <div className="space-y-2">
             <Button
@@ -1315,7 +1315,7 @@ export function DashboardPage({
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="min-w-0 flex-1 overflow-auto">
         {/* Header */}
         <div className="p-6 border-b bg-background">
           <div className="flex items-center justify-between">
@@ -1418,7 +1418,7 @@ export function DashboardPage({
                     <YAxis />
                     <Tooltip
                       formatter={(value) => [
-                        `₹${value.toLocaleString()}`,
+                          `Rs ${value.toLocaleString()}`,
                         "Revenue",
                       ]}
                     />
@@ -1481,7 +1481,7 @@ export function DashboardPage({
                         </span>
                       </div>
                       <span className="text-sm font-medium">
-                        ₹{category.revenue.toLocaleString()}
+                        Rs {category.revenue.toLocaleString()}
                       </span>
                     </div>
                   ))}
@@ -1533,11 +1533,11 @@ export function DashboardPage({
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            ₹{product.price.toLocaleString()}
+                            Rs {product.price.toLocaleString()}
                           </TableCell>
                           <TableCell>{product.sold}</TableCell>
                           <TableCell>
-                            ₹{product.revenue.toLocaleString()}
+                            Rs {product.revenue.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -1604,8 +1604,7 @@ export function DashboardPage({
                             {customer.orders}
                           </TableCell>
                           <TableCell>
-                            ₹
-                            {customer.totalSpent.toLocaleString()}
+                            Rs {customer.totalSpent.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             {customer.lastOrder}
@@ -1653,12 +1652,12 @@ export function DashboardPage({
                         <TableCell>
                           <Badge variant="outline">{product.category}</Badge>
                         </TableCell>
-                        <TableCell>₹{product.price.toLocaleString()}</TableCell>
+                        <TableCell>Rs {product.price.toLocaleString()}</TableCell>
                         <TableCell>
                           <Badge variant="secondary">{product.sold} sold</Badge>
                         </TableCell>
                         <TableCell className="font-semibold">
-                          ₹{product.revenue.toLocaleString()}
+                          Rs {product.revenue.toLocaleString()}
                         </TableCell>
                         <TableCell>
                           {product.stock > 0 ? (
@@ -1711,7 +1710,7 @@ export function DashboardPage({
                         <TableCell>
                           <Badge variant="outline">{customer.orders} orders</Badge>
                         </TableCell>
-                        <TableCell>₹{customer.totalSpent.toLocaleString()}</TableCell>
+                        <TableCell>Rs {customer.totalSpent.toLocaleString()}</TableCell>
                         <TableCell className="text-muted-foreground">
                           {customer.lastOrder}
                         </TableCell>
@@ -1768,7 +1767,7 @@ export function DashboardPage({
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      ₹{products.filter(p => p.stock > 0).reduce((acc, p) => acc + (p.stock * p.price), 0).toLocaleString()}
+                      Rs {products.filter(p => p.stock > 0).reduce((acc, p) => acc + (p.stock * p.price), 0).toLocaleString()}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Available inventory value
@@ -1814,7 +1813,7 @@ export function DashboardPage({
                             <TableCell>
                               <Badge variant="outline">{product.category}</Badge>
                             </TableCell>
-                            <TableCell>₹{product.price.toLocaleString()}</TableCell>
+                            <TableCell>Rs {product.price.toLocaleString()}</TableCell>
                             <TableCell>
                               <Badge
                                 variant={
@@ -1829,7 +1828,7 @@ export function DashboardPage({
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              ₹{(product.stock * product.price).toLocaleString()}
+                              Rs {(product.stock * product.price).toLocaleString()}
                             </TableCell>
                             <TableCell>
                               {product.stock < 10 ? (
@@ -1919,7 +1918,7 @@ export function DashboardPage({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (₹)</Label>
+                <Label htmlFor="price">Price (Rs)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -2073,7 +2072,7 @@ export function DashboardPage({
                 <SelectContent>
                   {products.map((product) => (
                     <SelectItem key={product.id} value={product.id}>
-                      {product.name} - ₹{product.price.toLocaleString()} (Stock: {product.stock})
+                      {product.name} - Rs {product.price.toLocaleString()} (Stock: {product.stock})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -2101,7 +2100,7 @@ export function DashboardPage({
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Order Total:</span>
                   <span className="text-2xl font-bold">
-                    ₹
+                    Rs{" "}
                     {(
                       (products.find((p) => p.id === newOrder.productId)
                         ?.price || 0) * parseInt(newOrder.quantity || "1")
