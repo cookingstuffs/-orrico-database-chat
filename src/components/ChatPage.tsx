@@ -1153,6 +1153,10 @@ export function ChatPage({
             <p className="mt-2 text-center text-xs text-muted-foreground">
               Try: "What were my sales yesterday?" or "Which items are low on stock?"
             </p>
+            <p className="mt-1 text-center text-xs text-muted-foreground">
+              For imported CSV tables, try: "count rows from sample_orders" or
+              "show top 5 by total from sample_orders"
+            </p>
           </div>
         </div>
       </div>

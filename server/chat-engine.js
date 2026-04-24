@@ -31,6 +31,13 @@ const fallbackKeywordResponses = [
   },
 ];
 
+const BUILT_IN_TABLES = new Set([
+  "customers",
+  "order_items",
+  "orders",
+  "products",
+]);
+
 function normalizeMessage(message) {
   return message.toLowerCase().replace(/[^\w\s]/g, " ").trim();
 }
@@ -59,8 +66,184 @@ function buildRangeFilter(range) {
   return "1 = 1";
 }
 
-function planQuery(message) {
+function isNumericColumn(column) {
+  const type = String(column.type || "").toUpperCase();
+  return type.includes("INT") || type.includes("REAL") || type.includes("NUM");
+}
+
+function quoteIdentifier(identifier) {
+  return `"${String(identifier).replace(/"/g, "\"\"")}"`;
+}
+
+function getSchema(connection) {
+  return getSchemaOverview(connection).schema;
+}
+
+function findTableMatch(normalizedMessage, schema) {
+  const explicitFromMatch = normalizedMessage.match(/\bfrom\s+([a-z0-9_]+)/);
+
+  if (explicitFromMatch) {
+    const explicitTable = schema.find(
+      (table) => table.table.toLowerCase() === explicitFromMatch[1],
+    );
+
+    if (explicitTable) {
+      return explicitTable;
+    }
+  }
+
+  return schema.find((table) => normalizedMessage.includes(table.table.toLowerCase())) || null;
+}
+
+function findColumnMatch(normalizedMessage, table, numericOnly = false) {
+  const eligibleColumns = table.columns.filter((column) =>
+    numericOnly ? isNumericColumn(column) : true,
+  );
+
+  return (
+    eligibleColumns.find((column) =>
+      normalizedMessage.includes(column.name.toLowerCase()),
+    ) || eligibleColumns[0] || null
+  );
+}
+
+function planImportedTableQuery(normalizedMessage, schema) {
+  const importedTables = schema.filter(
+    (table) => !BUILT_IN_TABLES.has(table.table),
+  );
+
+  if (importedTables.length === 0) {
+    return null;
+  }
+
+  const table = findTableMatch(normalizedMessage, importedTables);
+
+  if (!table) {
+    return null;
+  }
+
+  if (
+    normalizedMessage.includes("count") ||
+    normalizedMessage.includes("how many") ||
+    normalizedMessage.includes("rows")
+  ) {
+    return {
+      type: "custom_count",
+      tableName: table.table,
+      sql: `SELECT COUNT(*) AS row_count FROM ${quoteIdentifier(table.table)}`,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("top") ||
+    normalizedMessage.includes("highest") ||
+    normalizedMessage.includes("largest")
+  ) {
+    const numericColumn = findColumnMatch(normalizedMessage, table, true);
+
+    if (!numericColumn) {
+      return null;
+    }
+
+    const labelColumn =
+      table.columns.find(
+        (column) =>
+          !isNumericColumn(column) &&
+          column.name.toLowerCase() !== "id",
+      ) || table.columns[0];
+    const limitMatch = normalizedMessage.match(/\btop\s+(\d+)\b/);
+    const limit = Number(limitMatch?.[1] || 5);
+
+    return {
+      type: "custom_top_rows",
+      tableName: table.table,
+      labelColumn: labelColumn.name,
+      columnName: numericColumn.name,
+      sql: `
+        SELECT
+          ${quoteIdentifier(labelColumn.name)} AS label,
+          ${quoteIdentifier(numericColumn.name)} AS metric
+        FROM ${quoteIdentifier(table.table)}
+        ORDER BY ${quoteIdentifier(numericColumn.name)} DESC
+        LIMIT ${Math.min(Math.max(limit, 1), 10)}
+      `,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("average") ||
+    normalizedMessage.includes("avg") ||
+    normalizedMessage.includes("mean")
+  ) {
+    const numericColumn = findColumnMatch(normalizedMessage, table, true);
+
+    if (!numericColumn) {
+      return null;
+    }
+
+    return {
+      type: "custom_average",
+      tableName: table.table,
+      columnName: numericColumn.name,
+      sql: `
+        SELECT
+          AVG(${quoteIdentifier(numericColumn.name)}) AS average_value
+        FROM ${quoteIdentifier(table.table)}
+      `,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("sum") ||
+    normalizedMessage.includes("total") ||
+    normalizedMessage.includes("revenue")
+  ) {
+    const numericColumn = findColumnMatch(normalizedMessage, table, true);
+
+    if (!numericColumn) {
+      return null;
+    }
+
+    return {
+      type: "custom_sum",
+      tableName: table.table,
+      columnName: numericColumn.name,
+      sql: `
+        SELECT
+          SUM(${quoteIdentifier(numericColumn.name)}) AS total_value
+        FROM ${quoteIdentifier(table.table)}
+      `,
+    };
+  }
+
+  if (
+    normalizedMessage.includes("show") ||
+    normalizedMessage.includes("preview") ||
+    normalizedMessage.includes("sample") ||
+    normalizedMessage.includes("list")
+  ) {
+    const previewColumns = table.columns
+      .slice(0, Math.min(table.columns.length, 5))
+      .map((column) => quoteIdentifier(column.name))
+      .join(", ");
+
+    return {
+      type: "custom_preview",
+      tableName: table.table,
+      sql: `
+        SELECT ${previewColumns}
+        FROM ${quoteIdentifier(table.table)}
+        LIMIT 5
+      `,
+    };
+  }
+
+  return null;
+}
+
+function planQuery(message, connection) {
   const normalizedMessage = normalizeMessage(message);
+  const schema = getSchema(connection);
 
   if (
     normalizedMessage.includes("schema") ||
@@ -71,6 +254,12 @@ function planQuery(message) {
       type: "schema",
       sql: null,
     };
+  }
+
+  const importedTablePlan = planImportedTableQuery(normalizedMessage, schema);
+
+  if (importedTablePlan) {
+    return importedTablePlan;
   }
 
   if (
@@ -185,7 +374,10 @@ function planQuery(message) {
     };
   }
 
-  if (normalizedMessage.includes("sales yesterday") || normalizedMessage.includes("yesterday sales")) {
+  if (
+    normalizedMessage.includes("sales yesterday") ||
+    normalizedMessage.includes("yesterday sales")
+  ) {
     return {
       type: "sales_snapshot",
       range: "yesterday",
@@ -238,16 +430,26 @@ function planQuery(message) {
   return null;
 }
 
-function fallbackReply(message) {
+function fallbackReply(message, connection) {
   const normalizedMessage = normalizeMessage(message);
   const matchedResponse = fallbackKeywordResponses.find((entry) =>
     entry.keywords.some((keyword) => normalizedMessage.includes(keyword)),
   );
 
-  return (
-    matchedResponse?.response ||
-    "I can help with sales, products, inventory, customers, margins, and stock questions. Ask me something direct about your store and I'll keep the answer sharp."
-  );
+  if (matchedResponse) {
+    return matchedResponse.response;
+  }
+
+  const schema = getSchema(connection);
+  const importedTables = schema
+    .filter((table) => !BUILT_IN_TABLES.has(table.table))
+    .map((table) => table.table);
+
+  if (importedTables.length > 0) {
+    return `I can answer questions about your imported SQLite data too. Try prompts like "count rows from ${importedTables[0]}", "sum total from ${importedTables[0]}", or "show top 5 by total from ${importedTables[0]}".`;
+  }
+
+  return "I can help with sales, products, inventory, customers, margins, and stock questions. Ask me something direct about your store and I'll keep the answer sharp.";
 }
 
 function formatSchemaReply(connection) {
@@ -275,7 +477,7 @@ function formatQueryReply(plan, rows) {
     );
 
     return [
-      `I ran a product performance query for the last 7 days.`,
+      "I ran a product performance query for the last 7 days.",
       ...lines,
     ].join("\n");
   }
@@ -287,7 +489,7 @@ function formatQueryReply(plan, rows) {
     );
 
     return [
-      `I ranked the top customers for the current month.`,
+      "I ranked the top customers for the current month.",
       ...lines,
     ].join("\n");
   }
@@ -347,7 +549,46 @@ function formatQueryReply(plan, rows) {
     ].join("\n");
   }
 
-  return fallbackReply("");
+  if (plan.type === "custom_count") {
+    return `I counted the rows in ${plan.tableName}. Total rows: ${rows[0]?.row_count || 0}.`;
+  }
+
+  if (plan.type === "custom_sum") {
+    return `I summed ${plan.columnName} from ${plan.tableName}. Total: ${Number(rows[0]?.total_value || 0).toLocaleString("en-IN")}.`;
+  }
+
+  if (plan.type === "custom_average") {
+    return `I calculated the average ${plan.columnName} from ${plan.tableName}. Average: ${Number(rows[0]?.average_value || 0).toFixed(2)}.`;
+  }
+
+  if (plan.type === "custom_top_rows") {
+    const lines = rows.map(
+      (row, index) =>
+        `${index + 1}. ${row.label} - ${Number(row.metric || 0).toLocaleString("en-IN")}`,
+    );
+
+    return [
+      `I ranked the top rows from ${plan.tableName} by ${plan.columnName}.`,
+      ...lines,
+    ].join("\n");
+  }
+
+  if (plan.type === "custom_preview") {
+    const preview = rows
+      .map((row) =>
+        Object.entries(row)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(", "),
+      )
+      .join("\n");
+
+    return [
+      `I pulled a small preview from ${plan.tableName}.`,
+      preview,
+    ].join("\n");
+  }
+
+  return "I ran the query successfully.";
 }
 
 function executePlannedQuery(plan, connection) {
@@ -388,14 +629,14 @@ export function buildChatReply(message, options = {}) {
     };
   }
 
-  const plan = planQuery(message);
+  const plan = planQuery(message, connection);
 
   if (!plan) {
     return {
       mode: "fallback",
       sql: null,
       rows: [],
-      reply: fallbackReply(message),
+      reply: fallbackReply(message, connection),
     };
   }
 
