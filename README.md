@@ -1,54 +1,61 @@
-# Orrico Retail Intelligence
+# Orrico AI Retail Copilot
 
-Orrico Retail Intelligence is a full-stack retail analytics application built to help shop owners explore sales, customers, inventory, and operational performance through a dashboard and a conversational business assistant.
+Orrico is an AI-first retail intelligence web application designed to make store data feel conversational, accessible, and actionable. Instead of forcing users through rigid dashboards alone, the product blends analytics, onboarding, voice-enabled chat, and data exploration into a single assistant-led experience for modern retail teams.
 
-The product combines a React frontend, an Express-based API layer, and a lightweight SQLite-backed analytics workflow to support onboarding, demo access, schema inspection, CSV import, and natural-language business queries in one cohesive experience.
+The current codebase delivers a full-stack product foundation with a React frontend, an Express backend, SQLite-powered demo analytics, CSV import workflows, schema-aware querying, and Vercel-ready deployment routing. It is built to look and feel like an AI product, while still keeping the implementation practical, transparent, and extensible.
 
-## Overview
+## Why Orrico
 
-Orrico is designed around a simple product idea: business users should be able to ask practical questions about their store data without relying entirely on manual reports, spreadsheets, or admin-heavy BI tools.
+Retail owners and operators usually have data spread across dashboards, spreadsheets, billing systems, and exports. Orrico reframes that workflow around a conversational copilot that helps users:
 
-The current implementation includes:
+- explore sales, inventory, orders, and customer activity
+- ask business questions in natural language
+- inspect uploaded datasets without manual SQL knowledge
+- move from onboarding to insight discovery inside one guided product flow
 
-- retail-focused landing, onboarding, and authentication flows
-- demo login and guided product walkthrough support
-- dashboard views for sales, inventory, customers, and orders
-- chat-based business assistant with voice input support
-- SQLite-backed schema inspection and query execution
-- CSV import into SQLite for custom dataset exploration
-- database connection workflows for MySQL, PostgreSQL, Oracle, and SQLite
-- Vercel-compatible API deployment routing for frontend + backend delivery
+## AI Product Experience
 
-## Key Features
+The repository is intentionally shaped around an AI-native user experience:
+
+- conversational business assistant with voice input support
+- dashboard plus chat workflow for blended analytics exploration
+- schema-aware query responses for demo and imported datasets
+- onboarding and demo flows built for product walkthroughs and showcases
+- human-friendly interface patterns that make the app feel assistant-led rather than tool-heavy
+
+Important implementation note: the current natural-language querying flow is schema-aware and rule-driven. It is not yet a full LLM-powered universal SQL generation system.
+
+## Core Capabilities
 
 - Email/password authentication
 - Google sign-in integration support
-- Demo account access for product showcases
-- Conversational analytics experience
-- Natural-language querying for built-in retail data
-- Schema-aware querying for imported SQLite tables
-- CSV import with automatic table creation and column type inference
-- Responsive chat and dashboard layouts
-- Basic session handling and backend persistence
+- Demo account access for product presentations
+- Conversational retail analytics workflow
+- Voice-enabled chat interaction
+- SQLite-backed demo database for out-of-the-box exploration
+- CSV import with automatic table creation and type inference
+- Schema inspection and query support for imported SQLite tables
+- Database connection flows for MySQL, PostgreSQL, Oracle, and SQLite
+- Frontend + backend deployment support on Vercel
 
-## Technology Stack
+## Tech Stack
 
 - Frontend: React 18, Parcel, Tailwind CSS, Radix UI, Recharts
 - Backend: Node.js, Express
-- Data layer: SQLite for demo and imported tabular data, file-backed JSON for auth/session persistence
-- UX capabilities: voice input via browser speech recognition
-- Deployment: Vercel static frontend with routed API function support
+- Data layer: SQLite for demo/imported data, JSON-backed persistence for auth and session state
+- Interaction layer: browser speech recognition for voice chat input
+- Deployment: Vercel-compatible frontend build with API routing
 
 ## Repository Structure
 
 ```text
 .
 |-- api/                 # Vercel API entrypoint
-|-- server/              # Express app, query engine, demo database helpers, storage
+|-- server/              # Express app, storage helpers, query engine, demo DB logic
 |-- src/                 # React application source
-|   |-- components/      # Screens, layouts, and shared UI components
-|   |-- data/            # Local intent and helper data
-|   `-- lib/             # Frontend API client
+|   |-- components/      # Pages, chat UI, dashboard UI, onboarding flows
+|   |-- data/            # Local assistant and product helper data
+|   `-- lib/             # Frontend API client utilities
 |-- index.html           # Parcel entrypoint
 |-- package.json
 |-- vercel.json
@@ -68,7 +75,7 @@ The current implementation includes:
 npm install
 ```
 
-### Start the app locally
+### Run the app locally
 
 ```bash
 npm run dev
@@ -102,44 +109,45 @@ API_BASE_URL=http://localhost:4000/api
 
 ### Google Sign-In Setup
 
-Create a Google OAuth Web Client ID and add the following authorized JavaScript origins:
+Create a Google OAuth Web Client ID and add these authorized JavaScript origins:
 
 - `http://localhost:3000`
 - your production frontend URL
 
-Only the client ID is required on the frontend. Do not expose a Google client secret in client-side code.
+Only the client ID is required in the frontend environment. Do not expose a Google client secret in client-side code.
 
 ## Demo Access
 
-The application includes a demo account for product reviews and walkthroughs:
+The application includes a built-in demo account for product reviews and walkthroughs:
 
 - Email: `demo@orrico.com`
 - Password: `demo123`
 
 ## Current Data Workflow
 
-Orrico currently supports two practical data paths:
+Orrico currently supports two working data paths:
 
-1. Built-in retail demo data for immediate exploration
-2. CSV import into a SQLite database for custom dataset querying
+1. Built-in retail demo data for instant product exploration
+2. CSV import into SQLite for querying custom tabular datasets
 
-Once CSV data is imported, the assistant can inspect schema and answer common queries such as:
-
-- row counts
-- sums and averages
-- top-N rankings by numeric columns
-- preview queries on imported tables
-
-Example prompts:
+Once CSV data is imported, the assistant can answer practical prompts such as:
 
 - `count rows from sample_orders`
 - `sum total from sample_orders`
 - `show top 5 by total from sample_orders`
 - `show schema`
 
+Supported query behaviors currently include:
+
+- row counts
+- sums and averages
+- top-N rankings by numeric fields
+- preview-style table reads
+- schema inspection
+
 ## API Summary
 
-The backend currently exposes the following routes:
+The backend currently exposes:
 
 - `GET /api/health`
 - `POST /api/auth/signup`
@@ -155,34 +163,36 @@ The backend currently exposes the following routes:
 
 ## Deployment Notes
 
-The project is configured so the frontend can be deployed alongside an API entrypoint on Vercel.
+The project is configured so the frontend and backend can ship together on Vercel.
 
-Current deployment behavior:
+Current deployment model:
 
-- frontend assets are built into `dist`
-- API requests are routed to `api/index.js`
-- Express routes are shared between local and deployed environments
+- frontend assets build into `dist`
+- API traffic is routed through `api/index.js`
+- Express routes are shared between local development and deployed environments
 
-## Implementation Notes
+## Product Status
 
-This repository is a strong product foundation for demos, internal reviews, and iterative feature development. It already supports real query execution over SQLite-backed data, but it is not yet a production-hardened analytics platform.
+This repository already works well as a strong AI-product prototype, showcase build, and extensible full-stack foundation. It supports real query execution over SQLite-backed data and provides a cohesive assistant-led UX, but it is not yet a production-hardened analytics platform.
 
 At the moment:
 
-- auth/session persistence is file-backed rather than database-backed
-- deployed storage is not yet durable in the way a production data service should be
-- passwords are not yet hardened with production-grade hashing
-- MySQL/PostgreSQL/Oracle connection flows are product-facing, but the live query engine is currently centered on SQLite-backed workflows
-- natural-language querying is rule-driven and schema-aware, not yet full LLM-based SQL generation
+- auth and session persistence are JSON/file-backed
+- deployed storage is not yet durable enough for long-term production use
+- password handling still needs production-grade hardening
+- live query execution is strongest for SQLite-backed flows
+- NL-to-SQL behavior is structured and schema-aware, not fully model-generated
 
-## Recommended Next Steps
+## Roadmap Direction
 
-- move auth, sessions, and application persistence to PostgreSQL
-- add password hashing and stronger session security
-- add durable hosted storage for deployed environments
-- expand live query execution for MySQL and PostgreSQL connectors
-- add broader NL-to-SQL planning for arbitrary imported schemas
-- add automated tests and CI checks for frontend and backend flows
+The clearest next evolution for Orrico is to deepen the AI layer and productionize the data architecture:
+
+- move persistence to PostgreSQL
+- harden authentication and session security
+- support durable hosted storage for deployed environments
+- expand live query execution for MySQL and PostgreSQL
+- introduce broader AI-assisted SQL planning for arbitrary schemas
+- add CI coverage and automated testing for frontend and backend workflows
 
 ## License
 
