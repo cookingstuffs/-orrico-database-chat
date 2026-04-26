@@ -61,9 +61,8 @@ export function Footer({ onSupportClick }: FooterProps) {
           <div className="lg:col-span-2 space-y-4">
             <Logo textClassName="text-xl font-bold" />
             <p className="text-muted-foreground max-w-md">
-              Empowering retail businesses with AI-powered data
-              insights. Ask questions, get answers, make better
-              decisions.
+              Retail analytics for sales, inventory, orders, and
+              customer insights in one place.
             </p>
 
             <div className="space-y-2">
@@ -113,7 +112,7 @@ export function Footer({ onSupportClick }: FooterProps) {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            (c) 2026 Orrico AI.
+            (c) 2026 Orrico.
           </p>
           <div className="flex items-center gap-6">
             <button

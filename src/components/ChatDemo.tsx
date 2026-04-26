@@ -1,8 +1,19 @@
- import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Button } from "./ui/button";
+import { useEffect, useRef, useState } from "react";
+import {
+  Bot,
+  Mic,
+  MicOff,
+  Send,
+  User,
+} from "lucide-react";
 import { Badge } from "./ui/badge";
-import { Mic, MicOff, Send, User, Bot } from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 export function ChatDemo() {
   const [isListening, setIsListening] = useState(false);
@@ -10,17 +21,17 @@ export function ChatDemo() {
     {
       type: "bot",
       content:
-        "Hello! I'm your retail data assistant. Ask me anything about your store data. Try saying something like 'Show me today's best selling products' or 'What's my inventory status?'",
+        "Hello! I can help you explore store data through chat. Try asking about sales, inventory, or customer activity.",
     },
   ]);
-
-  // Ref for messages container
-  const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement | null>(
+    null,
+  );
 
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (container) {
-      container.scrollTop = container.scrollHeight; // 👈 only chat box scrolls
+      container.scrollTop = container.scrollHeight;
     }
   }, [messages]);
 
@@ -39,26 +50,30 @@ export function ChatDemo() {
       {
         type: "bot",
         content: query.includes("top 5")
-          ? "Here are your top 5 selling products this week:\n\n1. iPhone 15 Pro - 23 units sold\n2. Samsung Galaxy Buds - 18 units\n3. Wireless Charger - 15 units\n4. Phone Cases - 12 units\n5. Screen Protectors - 10 units\n\nTotal revenue from these items: ₹8,54,750"
+          ? "Here are your top 5 selling products this week:\n\n1. iPhone 15 Pro - 23 units sold\n2. Samsung Galaxy Buds - 18 units\n3. Wireless Charger - 15 units\n4. Phone Cases - 12 units\n5. Screen Protectors - 10 units\n\nTotal revenue from these items: Rs 8,54,750"
           : query.includes("inventory value")
-          ? "Your current inventory value is ₹47,83,200 across 1,247 items. This includes:\n\n• Electronics: ₹32,15,000 (67%)\n• Accessories: ₹12,68,000 (27%)\n• Other: ₹3,00,200 (6%)\n\nInventory turnover rate: 2.3x this quarter"
-          : "I found the information you requested. Your data shows positive trends across key metrics. Would you like me to break down any specific area in more detail?",
+            ? "Your current inventory value is Rs 47,83,200 across 1,247 items.\n\nElectronics: Rs 32,15,000\nAccessories: Rs 12,68,000\nOther: Rs 3,00,200\n\nInventory turnover rate: 2.3x this quarter"
+            : "I found the information you requested. Sales are trending positively across the main retail categories. Let me know if you want a more detailed breakdown.",
       },
     ]);
   };
 
   const toggleListening = () => {
     setIsListening(!isListening);
+
     if (!isListening) {
       setTimeout(() => {
         setIsListening(false);
         setMessages((prev) => [
           ...prev,
-          { type: "user", content: "Show me today's sales summary" },
+          {
+            type: "user",
+            content: "Show me today's sales summary",
+          },
           {
             type: "bot",
             content:
-              "Today's sales summary:\n\n💰 Total Revenue: ₹2,84,750\n📊 Transactions: 47\n📈 Avg. Order Value: ₹6,057\n\n🔥 Top Category: Electronics (65% of sales)\n⏰ Peak Hour: 2-3 PM (8 transactions)\n\nComparison to yesterday: +12% revenue, +5 transactions",
+              "Today's sales summary:\n\nTotal Revenue: Rs 2,84,750\nTransactions: 47\nAverage Order Value: Rs 6,057\n\nTop Category: Electronics\nPeak Hour: 2 PM to 3 PM\n\nComparison to yesterday: +12% revenue and +5 transactions",
           },
         ]);
       }, 3000);
@@ -68,59 +83,61 @@ export function ChatDemo() {
   return (
     <section id="demo" className="py-20">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl lg:text-5xl font-bold mb-4">
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 text-3xl font-bold lg:text-5xl">
             See It In
             <span className="text-primary"> Action</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Experience how easy it is to get insights from your retail data. Try
-            the demo below or click on sample questions.
+          <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
+            Try a few sample questions and see how the chat
+            experience can surface useful retail insights.
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto grid lg:grid-cols-3 gap-8">
-          {/* Chat Interface */}
+        <div className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <Card className="h-[600px] flex flex-col">
+            <Card className="flex h-[600px] flex-col">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-primary" />
+                  <Bot className="h-5 w-5 text-primary" />
                   Orrico Assistant
                   <Badge variant="secondary" className="ml-auto">
                     Demo
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col overflow-hidden">
-                {/* Messages */}
+              <CardContent className="flex flex-1 flex-col overflow-hidden">
                 <div
                   ref={messagesContainerRef}
-                  className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2"
+                  className="mb-4 flex-1 space-y-4 overflow-y-auto pr-2"
                 >
                   {messages.map((message, index) => (
                     <div
                       key={index}
                       className={`flex gap-3 ${
-                        message.type === "user" ? "justify-end" : ""
+                        message.type === "user"
+                          ? "justify-end"
+                          : ""
                       }`}
                     >
                       <div
-                        className={`flex gap-3 max-w-[80%] ${
-                          message.type === "user" ? "flex-row-reverse" : ""
+                        className={`flex max-w-[80%] gap-3 ${
+                          message.type === "user"
+                            ? "flex-row-reverse"
+                            : ""
                         }`}
                       >
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
                             message.type === "user"
                               ? "bg-primary text-primary-foreground"
                               : "bg-muted"
                           }`}
                         >
                           {message.type === "user" ? (
-                            <User className="w-4 h-4" />
+                            <User className="h-4 w-4" />
                           ) : (
-                            <Bot className="w-4 h-4" />
+                            <Bot className="h-4 w-4" />
                           )}
                         </div>
                         <div
@@ -139,7 +156,6 @@ export function ChatDemo() {
                   ))}
                 </div>
 
-                {/* Input area */}
                 <div className="flex gap-2">
                   <Button
                     variant={isListening ? "destructive" : "outline"}
@@ -148,40 +164,39 @@ export function ChatDemo() {
                     className={isListening ? "animate-pulse" : ""}
                   >
                     {isListening ? (
-                      <Mic className="w-4 h-4" />
+                      <Mic className="h-4 w-4" />
                     ) : (
-                      <MicOff className="w-4 h-4" />
+                      <MicOff className="h-4 w-4" />
                     )}
                   </Button>
-                  <div className="flex-1 flex items-center px-4 py-2 bg-muted rounded-lg">
+                  <div className="flex flex-1 items-center rounded-lg bg-muted px-4 py-2">
                     {isListening ? (
-                      <span className="text-sm text-muted-foreground animate-pulse">
+                      <span className="animate-pulse text-sm text-muted-foreground">
                         Listening...
                       </span>
                     ) : (
                       <span className="text-sm text-muted-foreground">
-                        Click the mic to start speaking or try a sample question
-                        →
+                        Click the mic to speak or try one of the
+                        sample questions.
                       </span>
                     )}
                   </div>
                   <Button size="icon" variant="outline">
-                    <Send className="w-4 h-4" />
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Sample Queries */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Try These Questions:</h3>
+            <h3 className="font-semibold">Try These Questions</h3>
             <div className="space-y-3">
               {sampleQueries.map((query, index) => (
                 <Button
                   key={index}
                   variant="outline"
-                  className="w-full text-left h-auto p-4 justify-start whitespace-normal"
+                  className="h-auto w-full justify-start whitespace-normal p-4 text-left"
                   onClick={() => handleSampleQuery(query)}
                 >
                   {query}

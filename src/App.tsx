@@ -22,7 +22,6 @@ export default function App() {
     useState<Page>("landing");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Check for existing authentication on startup
   useEffect(() => {
     const authToken = localStorage.getItem("orrico_auth_token");
 
@@ -47,14 +46,11 @@ export default function App() {
 
   const handleLogin = () => {
     setIsLoggedIn(true);
-    // Always show database connection page first after login
-    // Users can skip if they've already connected
     setCurrentPage("database");
   };
 
   const handleLogout = () => {
     api.logout().catch(() => undefined);
-    // Clear authentication data
     localStorage.removeItem("orrico_auth_token");
     localStorage.removeItem("orrico_current_user");
     localStorage.removeItem("orrico_last_page");

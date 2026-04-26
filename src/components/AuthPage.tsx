@@ -343,7 +343,6 @@ export function AuthPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Logo />
@@ -372,7 +371,6 @@ export function AuthPage({
 
       <div className="container mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-          {/* Left side - Benefits and Image */}
           <div className="space-y-8">
             <div className="space-y-4">
               <Badge variant="secondary" className="w-fit">
@@ -413,7 +411,6 @@ export function AuthPage({
             </div>
           </div>
 
-          {/* Right side - Auth Forms */}
           <div className="w-full max-w-md mx-auto">
             <Card className="shadow-2xl border-0">
               <CardHeader className="text-center space-y-4">
