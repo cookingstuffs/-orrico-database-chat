@@ -12,7 +12,6 @@ interface SupportPageProps {
 export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps) {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
@@ -29,7 +28,6 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Hero Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">How Can We Help You?</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -37,7 +35,6 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
           </p>
         </div>
 
-        {/* Quick Help Cards */}
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -109,7 +106,6 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
           </Card>
         </div>
 
-        {/* Resources Section */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8">Self-Help Resources</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -155,7 +151,6 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
           </div>
         </div>
 
-        {/* FAQ Section */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
           <div className="max-w-3xl mx-auto space-y-6">
@@ -221,7 +216,6 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
           </div>
         </div>
 
-        {/* Contact CTA */}
         <div className="bg-primary text-primary-foreground rounded-lg p-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Still Need Help?</h2>
           <p className="text-lg mb-6 opacity-90">

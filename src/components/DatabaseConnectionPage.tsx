@@ -67,7 +67,6 @@ const databaseOptions = [
   },
 ];
 
-// Demo credentials for each database type
 const demoCredentials = {
   mysql: {
     host: "demo-mysql.orrico.cloud",
@@ -148,13 +147,11 @@ export function DatabaseConnectionPage({
     setSelectedDatabase(value);
     form.setValue("databaseType", value);
     
-    // Set default port based on database type
     const db = databaseOptions.find((db) => db.id === value);
     if (db?.defaultPort) {
       form.setValue("port", db.defaultPort);
     }
     
-    // Clear form when changing database type
     form.setValue("host", "");
     form.setValue("databaseName", "");
     form.setValue("username", "");
@@ -182,7 +179,6 @@ export function DatabaseConnectionPage({
   const testConnection = async () => {
     setTestingConnection(true);
     
-    // Simulate connection test
     await new Promise((resolve) => setTimeout(resolve, 1500));
     
     setTestingConnection(false);
@@ -214,7 +210,6 @@ export function DatabaseConnectionPage({
     }
   };
 
-  // Helper function to check if using demo credentials
   const isDemoConnection = (data: DatabaseForm) => {
     const demo = demoCredentials[data.databaseType as keyof typeof demoCredentials];
     if (!demo) return false;
@@ -278,7 +273,6 @@ export function DatabaseConnectionPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Logo />
@@ -292,7 +286,6 @@ export function DatabaseConnectionPage({
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Welcome Message */}
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
               <Database className="w-8 h-8 text-primary" />
@@ -308,7 +301,6 @@ export function DatabaseConnectionPage({
             </p>
           </div>
 
-          {/* Existing Connection Alert */}
           {hasExistingConnection && (
             <Alert className="bg-green-50 border-green-200">
               <Check className="h-4 w-4 text-green-600" />
@@ -332,7 +324,6 @@ export function DatabaseConnectionPage({
             </Alert>
           )}
 
-          {/* Main Card */}
           <Card className="shadow-xl">
             <CardHeader>
               <CardTitle className="text-2xl">
@@ -346,7 +337,6 @@ export function DatabaseConnectionPage({
 
             <CardContent>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Database Type Selection */}
                 <div className="space-y-4">
                   <Label>Select Database Type</Label>
                   <RadioGroup
@@ -387,7 +377,6 @@ export function DatabaseConnectionPage({
                   </RadioGroup>
                 </div>
 
-                {/* Connection Details - Show only if not SQLite */}
                 {selectedDatabase !== "sqlite" && (
                   <div className="space-y-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
@@ -510,7 +499,6 @@ export function DatabaseConnectionPage({
                   </div>
                 )}
 
-                {/* SQLite File Upload */}
                 {selectedDatabase === "sqlite" && (
                   <div className="space-y-4 pt-4 border-t">
                     <div className="flex items-center justify-between">
@@ -620,7 +608,6 @@ export function DatabaseConnectionPage({
                   </div>
                 )}
 
-                {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <Button
                     type="submit"
@@ -643,7 +630,6 @@ export function DatabaseConnectionPage({
             </CardContent>
           </Card>
 
-          {/* Info Cards */}
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="bg-muted/50">
               <CardContent className="pt-6">

@@ -514,7 +514,6 @@ export function importCsvDataset(
     try {
       database.exec("ROLLBACK");
     } catch {
-      // No active transaction to roll back.
     }
     throw error;
   } finally {

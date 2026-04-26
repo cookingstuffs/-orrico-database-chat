@@ -11,12 +11,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    // Check localStorage for saved theme preference
     const savedTheme = localStorage.getItem("orrico_theme") as Theme;
     if (savedTheme) {
       return savedTheme;
     }
-    // Check system preference
     if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
       return "dark";
     }
@@ -24,14 +22,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    // Update the document class when theme changes
     const root = document.documentElement;
     if (theme === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
-    // Save to localStorage
     localStorage.setItem("orrico_theme", theme);
   }, [theme]);
 

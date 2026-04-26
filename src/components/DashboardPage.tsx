@@ -124,10 +124,8 @@ interface Order {
   date: string;
 }
 
-// Data version - increment this when you want to reset localStorage data
 const DATA_VERSION = "2.2";
 
-// Initial data
 const initialProducts: Product[] = [
   {
     id: "1",
@@ -204,7 +202,6 @@ const initialProducts: Product[] = [
 ];
 
 const initialCustomers: Customer[] = [
-  // Top tier customers (15-20 orders)
   {
     id: "1",
     name: "Amit Kumar",
@@ -233,7 +230,6 @@ const initialCustomers: Customer[] = [
     lastOrder: "1 day ago",
   },
   
-  // High value customers (10-14 orders)
   {
     id: "4",
     name: "Vikash Singh",
@@ -271,7 +267,6 @@ const initialCustomers: Customer[] = [
     lastOrder: "3 days ago",
   },
   
-  // Regular customers (6-9 orders)
   {
     id: "8",
     name: "Arjun Malhotra",
@@ -327,7 +322,6 @@ const initialCustomers: Customer[] = [
     lastOrder: "1 week ago",
   },
   
-  // Mid-tier customers (4-5 orders)
   {
     id: "14",
     name: "Ravi Krishnan",
@@ -374,7 +368,6 @@ const initialCustomers: Customer[] = [
     lastOrder: "2 weeks ago",
   },
   
-  // Regular customers (2-3 orders)
   {
     id: "19",
     name: "Deepa Rao",
@@ -440,7 +433,6 @@ const initialCustomers: Customer[] = [
   },
 ];
 
-// Initial sample orders showing customer purchase history
 const initialOrders: Order[] = [
   {
     id: "ord-2024110501",
@@ -606,11 +598,9 @@ export function DashboardPage({
   });
   const posIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // State for dynamic data
   const [products, setProducts] = useState<Product[]>(() => {
     const savedVersion = localStorage.getItem("orrico_data_version");
     
-    // If version doesn't match, reset to initial data
     if (savedVersion !== DATA_VERSION) {
       localStorage.setItem("orrico_data_version", DATA_VERSION);
       return initialProducts;
@@ -620,7 +610,6 @@ export function DashboardPage({
     return saved ? JSON.parse(saved) : initialProducts;
   });
 
-  // Generate full customer list (68 customers)
   const getFullCustomerList = () => {
     const additionalCustomers: Customer[] = [];
     const names = [
@@ -654,12 +643,10 @@ export function DashboardPage({
     const savedVersion = localStorage.getItem("orrico_data_version");
     const saved = localStorage.getItem("orrico_customers");
     
-    // If version doesn't match or no saved data, use full customer list
     if (savedVersion !== DATA_VERSION || !saved) {
       return getFullCustomerList();
     }
     
-    // Check if saved data has enough customers (should be 68)
     const parsedCustomers = JSON.parse(saved);
     if (parsedCustomers.length < 68) {
       return getFullCustomerList();
@@ -672,7 +659,6 @@ export function DashboardPage({
     const savedVersion = localStorage.getItem("orrico_data_version");
     const saved = localStorage.getItem("orrico_orders");
     
-    // If version doesn't match, reset to initial orders
     if (savedVersion !== DATA_VERSION) {
       return initialOrders;
     }
@@ -690,7 +676,6 @@ export function DashboardPage({
     return saved ? parseInt(saved) : 18;
   });
 
-  // Form state
   const [newProduct, setNewProduct] = useState({
     name: "",
     category: "",
@@ -708,7 +693,6 @@ export function DashboardPage({
     quantity: "1",
   });
 
-  // Persist data to localStorage
   useEffect(() => {
     localStorage.setItem("orrico_products", JSON.stringify(products));
   }, [products]);
@@ -733,10 +717,8 @@ export function DashboardPage({
     localStorage.setItem("orrico_pos_enabled", JSON.stringify(posEnabled));
   }, [posEnabled]);
 
-  // POS Integration - Simulates automatic sales from POS system
   useEffect(() => {
     if (posEnabled) {
-      // Generate random POS transaction every 8-15 seconds
       const startPosSimulation = () => {
         const randomDelay = Math.random() * 7000 + 8000; // 8-15 seconds
         posIntervalRef.current = setTimeout(() => {
@@ -762,19 +744,15 @@ export function DashboardPage({
     }
   }, [posEnabled]);
 
-  // Simulate a POS transaction
   const simulatePosTransaction = () => {
-    // Only proceed if we have products and customers
     if (products.length === 0 || customers.length === 0) return;
 
-    // Select random customer (80% existing, 20% new)
     let selectedCustomer: Customer;
     const useExistingCustomer = Math.random() > 0.2;
 
     if (useExistingCustomer && customers.length > 0) {
       selectedCustomer = customers[Math.floor(Math.random() * customers.length)];
     } else {
-      // Create new walk-in customer
       const newCustomerNames = [
         "Store Customer",
         "Anil Verma",
@@ -801,7 +779,6 @@ export function DashboardPage({
       setCustomers(prev => [selectedCustomer, ...prev]);
     }
 
-    // Select 1-3 random products
     const numProducts = Math.floor(Math.random() * 3) + 1;
     const selectedProducts: { product: Product; quantity: number }[] = [];
     
@@ -818,13 +795,11 @@ export function DashboardPage({
 
     if (selectedProducts.length === 0) return;
 
-    // Calculate total
     const total = selectedProducts.reduce(
       (sum, item) => sum + item.product.price * item.quantity,
       0
     );
 
-    // Update products
     setProducts(prev =>
       prev.map(p => {
         const purchasedItem = selectedProducts.find(sp => sp.product.id === p.id);
@@ -840,7 +815,6 @@ export function DashboardPage({
       })
     );
 
-    // Update customer
     setCustomers(prev =>
       prev.map(c =>
         c.id === selectedCustomer.id
@@ -854,11 +828,9 @@ export function DashboardPage({
       )
     );
 
-    // Update metrics
     setTodayRevenue(prev => prev + total);
     setTodayOrders(prev => prev + 1);
 
-    // Create order record
     const now = new Date();
     const dateStr = `${now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
     
@@ -876,7 +848,6 @@ export function DashboardPage({
     };
     setOrders(prev => [order, ...prev]);
 
-    // Show notification
     const productSummary = selectedProducts.length === 1
       ? `${selectedProducts[0].quantity}x ${selectedProducts[0].product.name}`
       : `${selectedProducts.length} items`;
@@ -938,7 +909,6 @@ export function DashboardPage({
     },
   ];
 
-  // Handler functions
   const handleRefresh = async () => {
     setIsRefreshing(true);
     toast.info("Refreshing dashboard data...");
@@ -977,7 +947,6 @@ export function DashboardPage({
   };
 
   const handleNewOrder = () => {
-    // Validate product and quantity
     if (!newOrder.productId || !newOrder.quantity) {
       toast.error("Please select a product and quantity");
       return;
@@ -991,15 +960,12 @@ export function DashboardPage({
 
     let customer: Customer;
 
-    // Handle new customer or existing customer
     if (newOrder.isNewCustomer) {
-      // Validate new customer fields
       if (!newOrder.customerName || !newOrder.customerEmail) {
         toast.error("Please enter customer name and email");
         return;
       }
 
-      // Create new customer
       customer = {
         id: Date.now().toString(),
         name: newOrder.customerName,
@@ -1010,10 +976,8 @@ export function DashboardPage({
         lastOrder: "Just now",
       };
 
-      // Add to customers list
       setCustomers([customer, ...customers]);
     } else {
-      // Use existing customer
       if (!newOrder.customerId) {
         toast.error("Please select a customer");
         return;
@@ -1030,7 +994,6 @@ export function DashboardPage({
     const quantity = parseInt(newOrder.quantity);
     const total = product.price * quantity;
 
-    // Create order
     const now = new Date();
     const dateStr = `${now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
     
@@ -1047,7 +1010,6 @@ export function DashboardPage({
       date: dateStr,
     };
 
-    // Update products (increase sold, decrease stock, increase revenue)
     setProducts(
       products.map((p) =>
         p.id === newOrder.productId
@@ -1061,7 +1023,6 @@ export function DashboardPage({
       )
     );
 
-    // Update customers (increase orders, increase total spent)
     if (!newOrder.isNewCustomer) {
       setCustomers(
         customers.map((c) =>
@@ -1076,7 +1037,6 @@ export function DashboardPage({
         )
       );
     } else {
-      // For new customers, update the one we just added
       setCustomers(prev =>
         prev.map((c) =>
           c.id === customer.id
@@ -1091,7 +1051,6 @@ export function DashboardPage({
       );
     }
 
-    // Update today's metrics
     setTodayRevenue(todayRevenue + total);
     setTodayOrders(todayOrders + 1);
 
@@ -1122,7 +1081,6 @@ export function DashboardPage({
     setShowSettingsDialog(true);
   };
 
-  // Calculate metrics
   const totalCustomers = customers.length;
   const totalProductsSold = products.reduce((acc, p) => acc + p.sold, 0);
 
@@ -1157,19 +1115,15 @@ export function DashboardPage({
     },
   ];
 
-  // Get top products (sorted by revenue)
   const topProducts = [...products]
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
 
-  // Get recent customers (sorted by last order)
   const recentCustomers = [...customers].slice(0, 5);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
       <div className="flex w-80 shrink-0 flex-col overflow-hidden border-r bg-muted/20">
-        {/* Header */}
         <div className="p-6 border-b">
           <Logo iconClassName="h-6 w-6" className="mb-4" onClick={onNavigateToLanding} clickable={!!onNavigateToLanding} />
           <div className="flex items-center gap-2 mb-3">
@@ -1184,7 +1138,6 @@ export function DashboardPage({
             </div>
           </div>
           
-          {/* POS Status */}
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-2">
               {posEnabled ? (
@@ -1216,7 +1169,6 @@ export function DashboardPage({
           </div>
         </div>
 
-        {/* Quick Actions */}
         <div className="p-6 border-b">
           <h3 className="font-medium mb-3">Quick Actions</h3>
           <div className="space-y-2">
@@ -1231,7 +1183,6 @@ export function DashboardPage({
           </div>
         </div>
 
-        {/* Navigation */}
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <h3 className="font-medium mb-3">Navigation</h3>
           <div className="space-y-2">
@@ -1282,7 +1233,6 @@ export function DashboardPage({
           </div>
         </div>
 
-        {/* Bottom Navigation */}
         <div className="p-6 border-t space-y-2">
           <Button
             variant="ghost"
@@ -1314,9 +1264,7 @@ export function DashboardPage({
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="min-w-0 flex-1 overflow-auto">
-        {/* Header */}
         <div className="p-6 border-b bg-background">
           <div className="flex items-center justify-between">
             <div>
@@ -1361,10 +1309,8 @@ export function DashboardPage({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Dashboard View */}
           {activeNavItem === "dashboard" && (
             <>
-          {/* Metrics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {metrics.map((metric, index) => (
               <Card key={index}>
@@ -1400,9 +1346,7 @@ export function DashboardPage({
             ))}
           </div>
 
-          {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Chart */}
             <Card>
               <CardHeader>
                 <CardTitle>Revenue Overview</CardTitle>
@@ -1428,7 +1372,6 @@ export function DashboardPage({
               </CardContent>
             </Card>
 
-            {/* Category Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle>Sales by Category</CardTitle>
@@ -1490,7 +1433,6 @@ export function DashboardPage({
             </Card>
           </div>
 
-          {/* Tables Section */}
           <Tabs defaultValue="products" className="space-y-4">
             <TabsList>
               <TabsTrigger value="products">
@@ -1620,7 +1562,6 @@ export function DashboardPage({
             </>
           )}
 
-          {/* Products View - All products ever sold */}
           {activeNavItem === "products" && (
             <Card>
               <CardHeader>
@@ -1678,7 +1619,6 @@ export function DashboardPage({
             </Card>
           )}
 
-          {/* Customers View */}
           {activeNavItem === "customers" && (
             <Card>
               <CardHeader>
@@ -1722,7 +1662,6 @@ export function DashboardPage({
             </Card>
           )}
 
-          {/* Inventory View - Only available products */}
           {activeNavItem === "inventory" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1870,7 +1809,6 @@ export function DashboardPage({
         </div>
       </div>
 
-      {/* Add Product Dialog */}
       <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
         <DialogContent>
           <DialogHeader>
@@ -1957,7 +1895,6 @@ export function DashboardPage({
         </DialogContent>
       </Dialog>
 
-      {/* New Order Dialog */}
       <Dialog open={showNewOrderDialog} onOpenChange={setShowNewOrderDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -1967,7 +1904,6 @@ export function DashboardPage({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {/* Customer Type Toggle */}
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border-2">
               <div className="flex items-center gap-3">
                 <Users className="h-5 w-5 text-primary" />
@@ -1993,7 +1929,6 @@ export function DashboardPage({
               />
             </div>
 
-            {/* Existing Customer Selection */}
             {!newOrder.isNewCustomer && (
               <div className="space-y-2">
                 <Label htmlFor="orderCustomer">Select Customer</Label>
@@ -2017,7 +1952,6 @@ export function DashboardPage({
               </div>
             )}
 
-            {/* New Customer Fields */}
             {newOrder.isNewCustomer && (
               <>
                 <div className="space-y-2">
@@ -2057,7 +1991,6 @@ export function DashboardPage({
                 </div>
               </>
             )}
-            {/* Product Selection */}
             <div className="space-y-2">
               <Label htmlFor="orderProduct">Product</Label>
               <Select
@@ -2079,7 +2012,6 @@ export function DashboardPage({
               </Select>
             </div>
 
-            {/* Quantity */}
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>
               <Input
@@ -2094,7 +2026,6 @@ export function DashboardPage({
               />
             </div>
 
-            {/* Order Total */}
             {newOrder.productId && newOrder.quantity && (
               <div className="p-4 bg-muted rounded-lg border-2 border-primary/20">
                 <div className="flex justify-between items-center">
@@ -2135,7 +2066,6 @@ export function DashboardPage({
         </DialogContent>
       </Dialog>
 
-      {/* Settings Dialog */}
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
