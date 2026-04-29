@@ -62,7 +62,7 @@
     "tailwindcss": "4.1.12"
   },
   "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "dev": "node server/dev-runner.js",
     "dev:client": "parcel index.html --port 3000",
     "dev:server": "node server/index.js",
     "build": "parcel build index.html",
