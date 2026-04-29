@@ -90,6 +90,15 @@ interface AuthPageProps {
   onLogin?: () => void;
 }
 
+const runtimeEnv =
+  typeof globalThis !== "undefined" &&
+  "process" in globalThis &&
+  typeof globalThis.process === "object" &&
+  globalThis.process &&
+  "env" in globalThis.process
+    ? (globalThis.process.env as Record<string, string | undefined>)
+    : {};
+
 export function AuthPage({
   onBackToHome,
   onNavigateToSupport,
@@ -105,7 +114,7 @@ export function AuthPage({
 
   const loginForm = useForm<LoginForm>();
   const signupForm = useForm<SignupForm>();
-  const googleClientId = process.env.GOOGLE_CLIENT_ID || "";
+  const googleClientId = runtimeEnv.GOOGLE_CLIENT_ID || "";
 
   const persistSession = (token: string, user: unknown) => {
     localStorage.setItem("orrico_auth_token", token);

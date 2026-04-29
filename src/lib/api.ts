@@ -4,7 +4,16 @@ const DEFAULT_API_BASE_URL =
     ? "/api"
     : "http://localhost:4000/api";
 
-const API_BASE_URL = process.env.API_BASE_URL || DEFAULT_API_BASE_URL;
+const runtimeEnv =
+  typeof globalThis !== "undefined" &&
+  "process" in globalThis &&
+  typeof globalThis.process === "object" &&
+  globalThis.process &&
+  "env" in globalThis.process
+    ? (globalThis.process.env as Record<string, string | undefined>)
+    : {};
+
+const API_BASE_URL = runtimeEnv.API_BASE_URL || DEFAULT_API_BASE_URL;
 const DEMO_EMAIL = "demo@orrico.com";
 const DEMO_PASSWORD = "demo123";
 const LOCAL_DEMO_TOKEN = "local-demo-session";
