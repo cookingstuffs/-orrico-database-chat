@@ -77,7 +77,7 @@ export function SupportPage({ onBackToHome, onNavigateToAuth }: SupportPageProps
                 </Badge>
               </div>
               <Button variant="outline" className="w-full">
-                Call +1 (555) 123-4567
+                Call +91 9871074567
               </Button>
             </CardContent>
           </Card>
