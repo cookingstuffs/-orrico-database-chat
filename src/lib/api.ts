@@ -1,6 +1,7 @@
 import {
   safeJsonParse,
   safeStorageGet,
+  safeStorageRemove,
   safeStorageSet,
 } from "./storage";
 
@@ -30,6 +31,15 @@ export interface ChatMessageResponse {
   sql: string | null;
   rows: Record<string, unknown>[];
   mode: string;
+}
+
+export interface StoredChatHistoryItem {
+  id: string;
+  userId: string;
+  message: string;
+  reply: string;
+  mode: string;
+  createdAt: string;
 }
 
 export interface CsvImportResponse {
@@ -109,9 +119,20 @@ function getStoredCurrentUser() {
   return safeJsonParse(storedUser, null);
 }
 
+export interface DatabaseConnectionTestResponse {
+  ok: boolean;
+  databasePath: string;
+  tableCount: number;
+}
+
 function getStoredDatabaseConnection() {
   const storedConnection = safeStorageGet(LOCAL_DB_CONNECTION_KEY);
   return safeJsonParse(storedConnection, null);
+}
+
+function clearStoredSession() {
+  safeStorageRemove("orrico_auth_token");
+  safeStorageRemove("orrico_current_user");
 }
 
 async function request(path: string, options: RequestOptions = {}) {
@@ -141,6 +162,10 @@ async function request(path: string, options: RequestOptions = {}) {
     : { error: "Request failed." };
 
   if (!response.ok) {
+    if (response.status === 401 && options.authenticated) {
+      clearStoredSession();
+    }
+
     throw new Error(data.error || "Request failed.");
   }
 
@@ -262,6 +287,15 @@ export const api = {
       return { connection };
     }
   },
+  testDatabaseConnection(
+    payload: Record<string, unknown>,
+  ): Promise<DatabaseConnectionTestResponse> {
+    return request("/database/test", {
+      method: "POST",
+      authenticated: true,
+      body: JSON.stringify(payload),
+    }) as Promise<DatabaseConnectionTestResponse>;
+  },
   importCsvDataset(payload: {
     csvContent: string;
     fileName: string;
@@ -288,5 +322,10 @@ export const api = {
         mode: "local-demo",
       };
     }
+  },
+  chatHistory(): Promise<{ messages: StoredChatHistoryItem[] }> {
+    return request("/chat/history", {
+      authenticated: true,
+    }) as Promise<{ messages: StoredChatHistoryItem[] }>;
   },
 };

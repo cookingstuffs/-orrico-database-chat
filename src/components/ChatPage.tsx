@@ -103,6 +103,13 @@ declare global {
 
 const ASSISTANT_NAME = "Ori";
 const ASSISTANT_FULL_NAME = "Ori from Orrico";
+const DEFAULT_WELCOME_MESSAGE: Message = {
+  id: "welcome-message",
+  type: "ai",
+  content:
+    `I'm ${ASSISTANT_FULL_NAME}. I can help you read your store performance, spot risks, and suggest the next move. Try asking something like "What were my sales yesterday?" or "Show me my top products this week."`,
+  timestamp: new Date(),
+};
 const HINDI_CHAR_REGEX = /[\u0900-\u097F]/;
 const HINGLISH_HINTS = [
   "kya",
@@ -519,13 +526,7 @@ export function ChatPage({
   onNavigateToLanding,
 }: ChatPageProps) {
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      type: "ai",
-      content:
-        `I'm ${ASSISTANT_FULL_NAME}. I can help you read your store performance, spot risks, and suggest the next move. Try asking something like "What were my sales yesterday?" or "Show me my top products this week."`,
-      timestamp: new Date(),
-    },
+    DEFAULT_WELCOME_MESSAGE,
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isRecording, setIsRecording] = useState(false);
@@ -723,6 +724,49 @@ export function ChatPage({
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    api
+      .chatHistory()
+      .then(({ messages: history }) => {
+        if (!isMounted || history.length === 0) {
+          return;
+        }
+
+        const restoredMessages = history.flatMap((entry) => {
+          const createdAt = new Date(entry.createdAt);
+
+          return [
+            {
+              id: `${entry.id}-user`,
+              type: "user" as const,
+              content: entry.message,
+              timestamp: createdAt,
+            },
+            {
+              id: `${entry.id}-ai`,
+              type: "ai" as const,
+              content: entry.reply,
+              timestamp: createdAt,
+            },
+          ];
+        });
+
+        setMessages([
+          DEFAULT_WELCOME_MESSAGE,
+          ...restoredMessages,
+        ]);
+      })
+      .catch(() => {
+        return;
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     inputValueRef.current = inputValue;

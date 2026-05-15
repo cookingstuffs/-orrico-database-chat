@@ -1,7 +1,7 @@
 import {
-  getSchemaOverview,
-  openRetailDatabase,
-} from "./demo-retail-db.js";
+  executeReadOnlyQuery,
+  getSchemaOverviewForConnection,
+} from "./query-runtime.js";
 
 const fallbackKeywordResponses = [
   {
@@ -75,8 +75,9 @@ function quoteIdentifier(identifier) {
   return `"${String(identifier).replace(/"/g, "\"\"")}"`;
 }
 
-function getSchema(connection) {
-  return getSchemaOverview(connection).schema;
+async function getSchema(connection) {
+  const overview = await getSchemaOverviewForConnection(connection);
+  return overview.schema;
 }
 
 function findTableMatch(normalizedMessage, schema) {
@@ -107,10 +108,14 @@ function findColumnMatch(normalizedMessage, table, numericOnly = false) {
   );
 }
 
-function planImportedTableQuery(normalizedMessage, schema) {
-  const importedTables = schema.filter(
-    (table) => !BUILT_IN_TABLES.has(table.table),
-  );
+function planImportedTableQuery(
+  normalizedMessage,
+  schema,
+  includeAllTables = false,
+) {
+  const importedTables = includeAllTables
+    ? schema
+    : schema.filter((table) => !BUILT_IN_TABLES.has(table.table));
 
   if (importedTables.length === 0) {
     return null;
@@ -241,9 +246,11 @@ function planImportedTableQuery(normalizedMessage, schema) {
   return null;
 }
 
-function planQuery(message, connection) {
+async function planQuery(message, connection) {
   const normalizedMessage = normalizeMessage(message);
-  const schema = getSchema(connection);
+  const schema = await getSchema(connection);
+  const isSqliteAnalytics =
+    !connection || connection.databaseType === "sqlite";
 
   if (
     normalizedMessage.includes("schema") ||
@@ -256,10 +263,18 @@ function planQuery(message, connection) {
     };
   }
 
-  const importedTablePlan = planImportedTableQuery(normalizedMessage, schema);
+  const importedTablePlan = planImportedTableQuery(
+    normalizedMessage,
+    schema,
+    !isSqliteAnalytics,
+  );
 
   if (importedTablePlan) {
     return importedTablePlan;
+  }
+
+  if (!isSqliteAnalytics) {
+    return null;
   }
 
   if (
@@ -430,7 +445,7 @@ function planQuery(message, connection) {
   return null;
 }
 
-function fallbackReply(message, connection) {
+async function fallbackReply(message, connection) {
   const normalizedMessage = normalizeMessage(message);
   const matchedResponse = fallbackKeywordResponses.find((entry) =>
     entry.keywords.some((keyword) => normalizedMessage.includes(keyword)),
@@ -440,20 +455,24 @@ function fallbackReply(message, connection) {
     return matchedResponse.response;
   }
 
-  const schema = getSchema(connection);
+  const schema = await getSchema(connection);
   const importedTables = schema
-    .filter((table) => !BUILT_IN_TABLES.has(table.table))
+    .filter((table) =>
+      connection?.databaseType === "sqlite"
+        ? !BUILT_IN_TABLES.has(table.table)
+        : true,
+    )
     .map((table) => table.table);
 
   if (importedTables.length > 0) {
-    return `I can answer questions about your imported SQLite data too. Try prompts like "count rows from ${importedTables[0]}", "sum total from ${importedTables[0]}", or "show top 5 by total from ${importedTables[0]}".`;
+    return `I can answer read-only questions about your connected data. Try prompts like "count rows from ${importedTables[0]}", "sum total from ${importedTables[0]}", or "show top 5 by total from ${importedTables[0]}".`;
   }
 
   return "I can help with sales, products, inventory, customers, margins, and stock questions. Ask me something direct about your store and I'll keep the answer sharp.";
 }
 
-function formatSchemaReply(connection) {
-  const overview = getSchemaOverview(connection);
+async function formatSchemaReply(connection) {
+  const overview = await getSchemaOverviewForConnection(connection);
   const schemaSummary = overview.schema
     .map((table) => {
       const columns = table.columns.map((column) => column.name).join(", ");
@@ -465,7 +484,7 @@ function formatSchemaReply(connection) {
     mode: "schema",
     sql: null,
     rows: [],
-    reply: `I found ${overview.schema.length} tables in the active SQLite database.\n\n${schemaSummary}`,
+    reply: `I found ${overview.schema.length} tables in the active database.\n\n${schemaSummary}`,
   };
 }
 
@@ -591,52 +610,31 @@ function formatQueryReply(plan, rows) {
   return "I ran the query successfully.";
 }
 
-function executePlannedQuery(plan, connection) {
+async function executePlannedQuery(plan, connection) {
   if (plan.type === "schema") {
     return formatSchemaReply(connection);
   }
 
-  const { database } = openRetailDatabase(connection);
-
-  try {
-    const rows = database.prepare(plan.sql).all();
-    return {
-      mode: "sql",
-      sql: plan.sql.trim(),
-      rows,
-      reply: formatQueryReply(plan, rows),
-    };
-  } finally {
-    database.close();
-  }
+  const rows = await executeReadOnlyQuery(connection, plan.sql);
+  return {
+    mode: "sql",
+    sql: plan.sql.trim(),
+    rows,
+    reply: formatQueryReply(plan, rows),
+  };
 }
 
-export function buildChatReply(message, options = {}) {
+export async function buildChatReply(message, options = {}) {
   const connection = options.connection || null;
 
-  if (
-    connection &&
-    connection.databaseType &&
-    connection.databaseType !== "sqlite" &&
-    !connection.isDemoConnection
-  ) {
-    return {
-      mode: "unsupported_connection",
-      sql: null,
-      rows: [],
-      reply:
-        "This version can run real read-only natural language queries against the demo SQLite database and SQLite file connections. MySQL, PostgreSQL, and Oracle connectors are the next backend step.",
-    };
-  }
-
-  const plan = planQuery(message, connection);
+  const plan = await planQuery(message, connection);
 
   if (!plan) {
     return {
       mode: "fallback",
       sql: null,
       rows: [],
-      reply: fallbackReply(message, connection),
+      reply: await fallbackReply(message, connection),
     };
   }
 

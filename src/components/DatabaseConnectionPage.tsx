@@ -180,11 +180,26 @@ export function DatabaseConnectionPage({
 
   const testConnection = async () => {
     setTestingConnection(true);
-    
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    setTestingConnection(false);
-    toast.success("Connection test successful!");
+
+    try {
+      const values = form.getValues();
+      const result = await api.testDatabaseConnection({
+        ...values,
+        isDemoConnection: isDemoConnection(values),
+      });
+
+      toast.success(
+        `Connection test successful. Found ${result.tableCount} tables.`,
+      );
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Connection test failed.",
+      );
+    } finally {
+      setTestingConnection(false);
+    }
   };
 
   const onSubmit = async (data: DatabaseForm) => {
@@ -215,6 +230,13 @@ export function DatabaseConnectionPage({
   const isDemoConnection = (data: DatabaseForm) => {
     const demo = demoCredentials[data.databaseType as keyof typeof demoCredentials];
     if (!demo) return false;
+
+    if (data.databaseType === "sqlite") {
+      return (
+        (data.filePath || "") === (demo.filePath || "") &&
+        data.databaseName === demo.databaseName
+      );
+    }
     
     return (
       data.host === demo.host &&
@@ -231,6 +253,10 @@ export function DatabaseConnectionPage({
   };
 
   const hasExistingConnection = existingConnection && !existingConnection.skipped;
+  const selectedDatabaseOption = databaseOptions.find(
+    (entry) => entry.id === selectedDatabase,
+  );
+  const isOracleSelected = selectedDatabase === "oracle";
 
   const proceedWithExisting = () => {
     toast.success("Using existing database connection...");
@@ -395,10 +421,11 @@ export function DatabaseConnectionPage({
                       </Button>
                     </div>
 
-                    <Alert className="border-sky-200 bg-sky-50/90">
+                  <Alert className="border-sky-200 bg-sky-50/90">
                       <AlertDescription className="text-sm">
-                        Click "Use Demo Credentials" to auto-fill with working demo
-                        connection details and test the application.
+                        PostgreSQL and MySQL now support live connection testing
+                        and schema inspection. Oracle remains a placeholder until
+                        its driver path is added.
                       </AlertDescription>
                     </Alert>
                     
@@ -491,12 +518,14 @@ export function DatabaseConnectionPage({
                       type="button"
                       variant="outline"
                       onClick={testConnection}
-                      disabled={testingConnection}
+                      disabled={testingConnection || isOracleSelected}
                       className="w-full"
                     >
-                      {testingConnection
-                        ? "Testing Connection..."
-                        : "Test Connection"}
+                      {isOracleSelected
+                        ? "Oracle Connector Coming Next"
+                        : testingConnection
+                          ? `Testing ${selectedDatabaseOption?.name || "Connection"}...`
+                          : `Test ${selectedDatabaseOption?.name || "Connection"}`}
                     </Button>
                   </div>
                 )}
@@ -519,8 +548,9 @@ export function DatabaseConnectionPage({
 
                     <Alert className="border-sky-200 bg-sky-50/90">
                       <AlertDescription className="text-sm">
-                        Click "Use Demo Database" to load a pre-configured SQLite
-                        database with sample retail data.
+                        SQLite is the working connector right now. Use the demo
+                        database or point to a local SQLite file to query real
+                        data through chat.
                       </AlertDescription>
                     </Alert>
 
@@ -528,7 +558,7 @@ export function DatabaseConnectionPage({
                       <Label htmlFor="filePath">Database File Path</Label>
                       <Input
                         id="filePath"
-                        placeholder="Path to your SQLite file"
+                        placeholder="Path to your SQLite file or use the demo database"
                         {...form.register("filePath")}
                       />
                       <p className="text-sm text-muted-foreground">
@@ -551,6 +581,18 @@ export function DatabaseConnectionPage({
                         }}
                       />
                     </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={testConnection}
+                      disabled={testingConnection}
+                      className="w-full"
+                    >
+                      {testingConnection
+                        ? "Testing Connection..."
+                        : "Test SQLite Connection"}
+                    </Button>
 
                     <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-5">
                       <div className="space-y-1">
@@ -614,9 +656,13 @@ export function DatabaseConnectionPage({
                   <Button
                     type="submit"
                     className="flex-1 gap-2"
-                    disabled={isLoading}
+                    disabled={isLoading || isOracleSelected}
                   >
-                    {isLoading ? "Connecting..." : "Connect Database"}
+                    {isOracleSelected
+                      ? "Oracle Connector Coming Next"
+                      : isLoading
+                        ? "Connecting..."
+                        : "Connect Database"}
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                   <Button
