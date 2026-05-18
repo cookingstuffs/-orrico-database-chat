@@ -4,6 +4,12 @@ export function isProduction() {
   return process.env.NODE_ENV === "production";
 }
 
+export function isEmailAuthOptional() {
+  return String(process.env.EMAIL_AUTH_OPTIONAL || "")
+    .trim()
+    .toLowerCase() === "true";
+}
+
 export function getCorsOrigins() {
   const configuredOrigins = String(
     process.env.CORS_ALLOWED_ORIGINS || "",
@@ -31,9 +37,11 @@ export function getMissingProductionEnvVars() {
     "DATABASE_URL",
     "APP_ENCRYPTION_KEY",
     "APP_BASE_URL",
-    "EMAIL_FROM",
-    "RESEND_API_KEY",
   ];
+
+  if (!isEmailAuthOptional()) {
+    requiredVariables.push("EMAIL_FROM", "RESEND_API_KEY");
+  }
 
   return requiredVariables.filter(
     (name) => !String(process.env[name] || "").trim(),
@@ -56,11 +64,14 @@ export function getRuntimeWarnings({ storeMode }) {
     warnings.push("APP_BASE_URL is not configured.");
   }
 
-  if (!String(process.env.EMAIL_FROM || "").trim()) {
+  if (!isEmailAuthOptional() && !String(process.env.EMAIL_FROM || "").trim()) {
     warnings.push("EMAIL_FROM is not configured.");
   }
 
-  if (!String(process.env.RESEND_API_KEY || "").trim()) {
+  if (
+    !isEmailAuthOptional() &&
+    !String(process.env.RESEND_API_KEY || "").trim()
+  ) {
     warnings.push("RESEND_API_KEY is not configured.");
   }
 
@@ -86,6 +97,7 @@ export function getRuntimeSummary({ storeMode, storeHealth }) {
     appBaseUrl: process.env.APP_BASE_URL || "",
     corsAllowedOrigins: getCorsOrigins(),
     emailProvider: process.env.EMAIL_PROVIDER || "resend",
+    emailAuthOptional: isEmailAuthOptional(),
     emailConfigured: Boolean(
       String(process.env.EMAIL_FROM || "").trim() &&
         String(process.env.RESEND_API_KEY || "").trim(),

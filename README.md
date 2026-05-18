@@ -100,6 +100,7 @@ DATABASE_URL=
 PGSSL=disable
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 EMAIL_PROVIDER=resend
+EMAIL_AUTH_OPTIONAL=false
 RESEND_API_KEY=
 EMAIL_FROM=no-reply@example.com
 EMAIL_REPLY_TO=support@example.com
@@ -137,6 +138,7 @@ APP_BASE_URL=http://localhost:3000
 - if `DATABASE_URL` is configured, app persistence moves to PostgreSQL with a migration path from the existing SQLite snapshot
 - stored database credentials are encrypted before persistence
 - verification and reset emails are provider-backed when `RESEND_API_KEY` and sender env vars are configured
+- set `EMAIL_AUTH_OPTIONAL=true` to temporarily bypass email verification requirements until sender setup is ready
 - `GET /api/health` exposes runtime/storage status and config warnings
 - `GET /api/health/ready` returns `503` until the store is reachable and required production env vars are configured
 - SQLite is the main working query engine in the current version, both for app state and demo/imported analytics data

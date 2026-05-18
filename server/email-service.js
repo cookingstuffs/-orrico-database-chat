@@ -10,6 +10,20 @@ function getEmailConfiguration() {
   };
 }
 
+export function isEmailAuthOptional() {
+  return String(process.env.EMAIL_AUTH_OPTIONAL || "").trim().toLowerCase() === "true";
+}
+
+export function isEmailDeliveryConfigured() {
+  const configuration = getEmailConfiguration();
+
+  return Boolean(
+    configuration.from &&
+      configuration.provider === "resend" &&
+      configuration.resendApiKey,
+  );
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")

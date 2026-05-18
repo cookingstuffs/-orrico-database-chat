@@ -59,6 +59,7 @@ import {
   buildPasswordResetEmail,
   buildVerificationEmail,
   getAppBaseUrl,
+  isEmailAuthOptional,
   sendTransactionalEmail,
 } from "./email-service.js";
 
@@ -464,27 +465,48 @@ app.post("/api/auth/signup", async (request, response) => {
     passwordHash: await hashPassword(String(password)),
     authProvider: "password",
     createdAt: new Date().toISOString(),
-    emailVerifiedAt: null,
+    emailVerifiedAt: isEmailAuthOptional()
+      ? new Date().toISOString()
+      : null,
   };
-  const verificationToken = createEmailVerificationToken(
-    user.id,
-  );
+  const requiresEmailVerification = !user.emailVerifiedAt;
 
   data.users.push(user);
-  data.emailVerificationTokens.push(verificationToken);
+  let verificationToken = null;
+  let emailResult = {
+    delivered: false,
+    skipped: true,
+    reason: "Email verification is currently optional.",
+  };
+
+  if (requiresEmailVerification) {
+    verificationToken = createEmailVerificationToken(user.id);
+    data.emailVerificationTokens.push(verificationToken);
+  }
+
+  let session = null;
+  if (!requiresEmailVerification) {
+    session = createSession(user.id);
+    data.sessions.push(session);
+  }
+
   await writeData(data);
-  const emailResult = await deliverVerificationEmail(
-    user,
-    verificationToken.token,
-  );
+
+  if (verificationToken) {
+    emailResult = await deliverVerificationEmail(
+      user,
+      verificationToken.token,
+    );
+  }
   clearFailedAuthAttempts(rateLimit.key);
 
   response.status(201).json({
+    token: session?.token,
     user: sanitizeUser(user),
-    requiresEmailVerification: true,
+    requiresEmailVerification,
     emailDelivery: emailResult,
     verificationToken:
-      process.env.NODE_ENV === "production"
+      !verificationToken || process.env.NODE_ENV === "production"
         ? undefined
         : verificationToken.token,
   });
@@ -566,6 +588,20 @@ app.post("/api/auth/login", async (request, response) => {
     user.authProvider === "password" &&
     !user.emailVerifiedAt
   ) {
+    if (isEmailAuthOptional()) {
+      user.emailVerifiedAt = new Date().toISOString();
+      const session = createSession(user.id);
+      data.sessions.push(session);
+      await writeData(data);
+      clearFailedAuthAttempts(rateLimit.key);
+
+      response.json({
+        token: session.token,
+        user: sanitizeUser(user),
+      });
+      return;
+    }
+
     const verificationToken =
       getLatestVerificationTokenForUser(data, user.id) ||
       createEmailVerificationToken(user.id);
@@ -608,6 +644,15 @@ app.post("/api/auth/login", async (request, response) => {
 });
 
 app.post("/api/auth/verify-email/request", async (request, response) => {
+  if (isEmailAuthOptional()) {
+    response.json({
+      ok: true,
+      message:
+        "Email verification is currently optional for this deployment.",
+    });
+    return;
+  }
+
   const normalizedEmail = normalizeEmail(request.body?.email);
 
   if (!normalizedEmail) {
@@ -663,6 +708,13 @@ app.post("/api/auth/verify-email/request", async (request, response) => {
 });
 
 app.post("/api/auth/verify-email/confirm", async (request, response) => {
+  if (isEmailAuthOptional()) {
+    response.status(400).json({
+      error: "Email verification is currently disabled for this deployment.",
+    });
+    return;
+  }
+
   const normalizedEmail = normalizeEmail(request.body?.email);
   const token = String(request.body?.token || "").trim();
 
@@ -710,6 +762,13 @@ app.post("/api/auth/verify-email/confirm", async (request, response) => {
 });
 
 app.post("/api/auth/password-reset/request", async (request, response) => {
+  if (isEmailAuthOptional()) {
+    response.status(400).json({
+      error: "Password reset by email is currently unavailable.",
+    });
+    return;
+  }
+
   const normalizedEmail = normalizeEmail(request.body?.email);
 
   if (!normalizedEmail) {

@@ -179,6 +179,18 @@ export function AuthPage({
         password: data.password,
       });
 
+      if (session.token) {
+        persistSession(session.token, session.user);
+        setIsLoading(false);
+        toast.success(
+          "Account created. Redirecting to your dashboard...",
+        );
+        setTimeout(() => {
+          onLogin?.();
+        }, 800);
+        return;
+      }
+
       setIsLoading(false);
       verificationForm.setValue("email", data.email);
       verificationForm.setValue(
@@ -252,7 +264,9 @@ export function AuthPage({
       setIsLoading(false);
       resetPasswordForm.setValue("email", data.email);
       resetPasswordForm.setValue("token", result.resetToken || "");
-      setAuthMode("reset");
+      if (result.resetToken) {
+        setAuthMode("reset");
+      }
       toast.success(result.message);
     } catch (error) {
       setIsLoading(false);
@@ -857,15 +871,23 @@ export function AuthPage({
                             toast.error("Enter your email first.");
                             return;
                           }
-                          const result =
-                            await api.requestEmailVerification(email);
-                          if (result.verificationToken) {
-                            verificationForm.setValue(
-                              "token",
-                              result.verificationToken,
+                          try {
+                            const result =
+                              await api.requestEmailVerification(email);
+                            if (result.verificationToken) {
+                              verificationForm.setValue(
+                                "token",
+                                result.verificationToken,
+                              );
+                            }
+                            toast.success(result.message);
+                          } catch (error) {
+                            toast.error(
+                              error instanceof Error
+                                ? error.message
+                                : "Verification could not be requested.",
                             );
                           }
-                          toast.success(result.message);
                         }}
                       >
                         Resend Verification
