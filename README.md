@@ -73,6 +73,18 @@ This starts:
 npm run build
 ```
 
+### Production smoke test
+
+```bash
+npm run smoke:prod
+```
+
+Optional:
+
+```bash
+SMOKE_BASE_URL=https://your-production-domain npm run smoke:prod
+```
+
 ## Environment Variables
 
 Create a local `.env` file using `.env.example` as a reference.
@@ -133,6 +145,30 @@ APP_BASE_URL=http://localhost:3000
 - PostgreSQL/MySQL now support safe read-only schema and table queries
 - Oracle remains a planned connector
 - MySQL and PostgreSQL connection flows are present in the product, but live querying is still centered on SQLite-backed workflows
+
+## Launch Checklist
+
+Before launch, complete these items:
+
+1. configure production Vercel env vars:
+   - `DATABASE_URL`
+   - `RESEND_API_KEY`
+   - `EMAIL_FROM`
+   - `APP_BASE_URL`
+   - `APP_ENCRYPTION_KEY`
+   - `CORS_ALLOWED_ORIGINS`
+2. redeploy production
+3. verify `GET /api/health/ready` returns `200`
+4. run `npm run smoke:prod`
+5. manually test:
+   - signup
+   - email verification
+   - login/logout
+   - password reset
+   - dashboard load
+   - product/customer/order write flows
+   - CSV import
+   - chat history
 
 ## License
 

@@ -76,6 +76,7 @@
     "dev:server": "node server/index.js",
     "build": "parcel build index.html",
     "start": "node server/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "smoke:prod": "node scripts/production-smoke.js"
   }
 }
