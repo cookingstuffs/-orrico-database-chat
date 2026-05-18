@@ -35,7 +35,22 @@ import {
   getDashboardOrders,
   getDashboardSummary,
 } from "./dashboard-service.js";
-import { readData, writeData } from "./data-store.js";
+import {
+  checkStoreHealth,
+  getStoreInfo,
+  getStoreMode,
+  readData,
+  writeData,
+} from "./data-store.js";
+import {
+  errorHandler,
+  requestContextMiddleware,
+  requestLoggerMiddleware,
+} from "./logger.js";
+import {
+  getCorsOrigins,
+  getRuntimeSummary,
+} from "./runtime.js";
 import {
   decryptSecret,
   encryptSecret,
@@ -52,14 +67,13 @@ app.disable("x-powered-by");
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-    ],
+    origin: getCorsOrigins(),
     credentials: true,
   }),
 );
 app.use(express.json({ limit: "2mb" }));
+app.use(requestContextMiddleware);
+app.use(requestLoggerMiddleware);
 
 const authAttemptStore = new Map();
 const AUTH_ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
@@ -348,8 +362,49 @@ async function deliverPasswordResetEmail(user, token) {
   );
 }
 
-app.get("/api/health", (_request, response) => {
-  response.json({ status: "ok" });
+app.get("/api/health", async (_request, response) => {
+  const storeHealth = await checkStoreHealth();
+  const storeInfo = getStoreInfo();
+  const runtime = getRuntimeSummary({
+    storeMode: getStoreMode(),
+    storeHealth,
+  });
+
+  response.json({
+    status: storeHealth.ok ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    store: {
+      ...storeInfo,
+      ...storeHealth,
+    },
+    runtime,
+  });
+});
+
+app.get("/api/health/ready", async (_request, response) => {
+  try {
+    const storeHealth = await checkStoreHealth();
+    const runtime = getRuntimeSummary({
+      storeMode: getStoreMode(),
+      storeHealth,
+    });
+    const ready =
+      storeHealth.ok && runtime.missingProductionEnvVars.length === 0;
+
+    response.status(ready ? 200 : 503).json({
+      ready,
+      timestamp: new Date().toISOString(),
+      runtime,
+    });
+  } catch (error) {
+    response.status(503).json({
+      ready: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Readiness check failed.",
+    });
+  }
 });
 
 app.post("/api/auth/signup", async (request, response) => {
@@ -1393,3 +1448,5 @@ app.post("/api/chat/message", async (request, response) => {
 
   response.json(result);
 });
+
+app.use(errorHandler);

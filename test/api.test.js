@@ -125,6 +125,18 @@ test("signup requires email verification and login is blocked until verified", a
   assert.equal(verify.body.user.emailVerified, true);
 });
 
+test("health endpoints expose runtime status", async () => {
+  const health = await request("/health");
+  assert.equal(health.status, 200);
+  assert.equal(health.body.status, "ok");
+  assert.equal(health.body.store.mode, "sqlite");
+  assert.ok(Array.isArray(health.body.runtime.warnings));
+
+  const ready = await request("/health/ready");
+  assert.equal(ready.status, 200);
+  assert.equal(ready.body.ready, true);
+});
+
 test("password reset updates the account password", async () => {
   const email = `reset-${Date.now()}@example.com`;
   await signupAndVerify(email);

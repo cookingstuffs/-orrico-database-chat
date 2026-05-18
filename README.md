@@ -86,6 +86,7 @@ APP_DATA_DIRECTORY=server/data
 APP_ENCRYPTION_KEY=replace-with-a-strong-secret-key
 DATABASE_URL=
 PGSSL=disable
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=
 EMAIL_FROM=no-reply@example.com
@@ -101,6 +102,7 @@ APP_BASE_URL=http://localhost:3000
 ## API Routes
 
 - `GET /api/health`
+- `GET /api/health/ready`
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
 - `POST /api/auth/verify-email/request`
@@ -123,6 +125,8 @@ APP_BASE_URL=http://localhost:3000
 - if `DATABASE_URL` is configured, app persistence moves to PostgreSQL with a migration path from the existing SQLite snapshot
 - stored database credentials are encrypted before persistence
 - verification and reset emails are provider-backed when `RESEND_API_KEY` and sender env vars are configured
+- `GET /api/health` exposes runtime/storage status and config warnings
+- `GET /api/health/ready` returns `503` until the store is reachable and required production env vars are configured
 - SQLite is the main working query engine in the current version, both for app state and demo/imported analytics data
 - PostgreSQL and MySQL now support live connection testing and schema inspection
 - SQLite remains the strongest path for built-in retail analytics and CSV-driven querying

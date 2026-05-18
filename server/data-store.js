@@ -61,6 +61,18 @@ function usePostgresStore() {
   return Boolean(getDatabaseUrl().trim());
 }
 
+export function getStoreMode() {
+  return usePostgresStore() ? "postgresql" : "sqlite";
+}
+
+export function getStoreInfo() {
+  return {
+    mode: getStoreMode(),
+    dataDirectory: getDataDirectory(),
+    sqliteFilePath: getSqliteFilePath(),
+  };
+}
+
 function normalizeDataShape(data) {
   return {
     ...defaultData,
@@ -847,6 +859,36 @@ export async function writeData(nextData) {
 
   try {
     persistSqliteSnapshot(database, nextData);
+  } finally {
+    database.close();
+  }
+}
+
+export async function checkStoreHealth() {
+  if (usePostgresStore()) {
+    const client = await openPostgresClient();
+
+    try {
+      await initializePostgres(client);
+      await client.query("SELECT 1");
+      return {
+        ok: true,
+        mode: "postgresql",
+      };
+    } finally {
+      await client.end();
+    }
+  }
+
+  const database = openSqliteDatabase();
+
+  try {
+    database.prepare("SELECT 1").get();
+    return {
+      ok: true,
+      mode: "sqlite",
+      filePath: getSqliteFilePath(),
+    };
   } finally {
     database.close();
   }
